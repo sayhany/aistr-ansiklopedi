@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="tr">
+<script>
+    (function() {
+        var saved = localStorage.getItem('theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+        window.__collapsedCategories = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+    })();
+</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fâillik | YZ Güvenliği Ansiklopedisi</title>
+    <meta name="description" content="Yapay zekâ güvenliği kavramlarının Türkçe ansiklopedisi">
+    <link rel="stylesheet" href="https://sayhany.github.io/aistr-ansiklopedi/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        :root {
+            --accent-color: #D97757;
+            --accent-hover: #c4684a;
+        }
+        [data-theme="dark"] {
+            --bg-color: #262624;
+            --sidebar-bg: #1e1e1c;
+            --text-color: #f5f4ef;
+            --text-muted: #a8a7a3;
+            --link-color: #e8a68c;
+            --code-bg: #1a1a18;
+            --border-color: #3a3a38;
+            --hover-bg: rgba(255,255,255,0.06);
+        }
+        [data-theme="light"] {
+            --bg-color: #faf9f6;
+            --sidebar-bg: #f0efec;
+            --text-color: #262624;
+            --text-muted: #6b6a66;
+            --link-color: #b85a3d;
+            --code-bg: #e8e7e4;
+            --border-color: #d4d3d0;
+            --hover-bg: rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            padding: 1.25rem 0.75rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .sidebar h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            letter-spacing: -0.02em;
+        }
+        .theme-toggle {
+            background: var(--code-bg);
+            border: none;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+        .theme-toggle .knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle .knob svg {
+            width: 12px;
+            height: 12px;
+            fill: #fff;
+        }
+        .theme-toggle .icon-sun { display: none; }
+        .theme-toggle .icon-moon { display: block; }
+        [data-theme="light"] .theme-toggle .knob {
+            transform: translateX(20px);
+        }
+        [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+        [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+        /* Navigation */
+        .sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
+        .nav-home {
+            display: block;
+            padding: 0.5rem 0.75rem 0.5rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease;
+            margin-bottom: 0.5rem;
+        }
+        .nav-home:hover { background: var(--hover-bg); }
+
+        /* Category sections */
+        .nav-category {
+            margin-bottom: 0.25rem;
+        }
+        .nav-category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+        .nav-category-header:hover {
+            background: var(--hover-bg);
+            color: var(--text-color);
+        }
+        .nav-category-header svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .nav-category.collapsed .nav-category-header svg {
+            transform: rotate(-90deg);
+        }
+        .nav-category-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.0625rem;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            opacity: 1;
+        }
+        .nav-category.collapsed .nav-category-items {
+            max-height: 0;
+            opacity: 0;
+        }
+        .nav-category-items a {
+            display: block;
+            padding: 0.4rem 0.75rem 0.4rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: background 0.15s ease;
+        }
+        .nav-category-items a:hover {
+            background: var(--hover-bg);
+        }
+        .nav-category-items a.active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Main content */
+        .main { margin-left: 280px; flex: 1; padding: 3rem; max-width: 900px; }
+        .main h1 { color: var(--accent-color); margin-bottom: 1.5rem; font-size: 2.2rem; font-weight: 600; letter-spacing: -0.02em; }
+        .main h2 { color: var(--accent-color); margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; font-weight: 600; }
+        .main h3 { margin: 1.5rem 0 0.8rem; color: var(--text-color); font-weight: 600; }
+        .main h4, .main h5, .main h6 { margin: 1.25rem 0 0.6rem; color: var(--text-color); font-weight: 600; }
+        .main p { margin-bottom: 1rem; }
+        .main a { color: var(--link-color); }
+        .main a:hover { color: var(--accent-color); }
+        .main ul, .main ol { margin: 1rem 0 1rem 2rem; }
+        .main li { margin-bottom: 0.5rem; }
+        .main code { background: var(--code-bg); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.875em; }
+        .main pre { background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+        .main pre code { padding: 0; }
+        .main blockquote { border-left: 3px solid var(--accent-color); padding-left: 1rem; margin: 1rem 0; color: var(--text-muted); }
+        .main hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>YZ Güvenliği Ansiklopedisi</h1>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <span class="knob">
+                        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                </button>
+            </div>
+            <nav>
+                <a href="https://sayhany.github.io/aistr-ansiklopedi" class="nav-home">Ana Sayfa</a>
+
+                
+                
+
+                <!-- Temel Kavramlar -->
+                <div class="nav-category" data-category="temel"><script>if(window.__collapsedCategories.temel)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Temel Kavramlar</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;zeka&#x2F;">Zekâ</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;faillik&#x2F;">Fâillik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;davranissal-ve-aracsal-faillik&#x2F;">Davranışsal ve Araçsal Fâillik</a>
+                    </div>
+                </div>
+
+                <!-- Teorik Temeller -->
+                <div class="nav-category" data-category="teorik"><script>if(window.__collapsedCategories.teorik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Teorik Temeller</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;dikeylik-tezi&#x2F;">Dikeylik Tezi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aracsal-yakinsama&#x2F;">Araçsal Yakınsama</a>
+                    </div>
+                </div>
+
+                <!-- Hizalama Problemleri -->
+                <div class="nav-category" data-category="hizalama"><script>if(window.__collapsedCategories.hizalama)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Hizalama Problemleri</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;odul-korsanligi&#x2F;">Ödül Korsanlığı</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;sartname-suistimali&#x2F;">Şartnâme Suistimali</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hedef-yanlis-genellestirmesi&#x2F;">Hedef Yanlış Genelleştirmesi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;mesa-optimizasyon&#x2F;">Mesa-Optimizasyon</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aldatici-hizalanma&#x2F;">Aldatıcı Hizalanma</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hizalama-vergisi&#x2F;">Hizalama Vergisi</a>
+                    </div>
+                </div>
+
+                <!-- Güvenlik Yaklaşımları -->
+                <div class="nav-category" data-category="guvenlik"><script>if(window.__collapsedCategories.guvenlik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Güvenlik Yaklaşımları</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;olceklenebilir-gozetim&#x2F;">Ölçeklenebilir Gözetim</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;duzeltilebilirlik&#x2F;">Düzeltilebilirlik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;yorumlanabilirlik&#x2F;">Yorumlanabilirlik</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        <main class="main">
+            
+<h1>Fâillik</h1>
+<h2 id="giris">Giriş</h2>
+<p>Yapay zekâ disiplininde bir <strong>fâil</strong> (agent), formel olarak, çevresini sensörler aracılığıyla algılayabilen ve bu çevre üzerinde aktüatörler (eyleyiciler, ya da İngilizcede “actuators”) vasıtasıyla eyleyebilen herhangi bir varlık olarak tanımlanır (Russell &amp; Norvig, 2021). <strong>Fâillik</strong> (agency), böyle bir varlığın hedeflere ulaşmak amacıyla kendi çevresi içinde eylemlerde bulunma becerisidir. Bir fâilin davranışı, herhangi bir <strong>algı dizisinden</strong> (duyusal girdilerin geçmişi) bir eyleme yönelik soyut bir matematiksel eşleme olan <strong>fâil fonksiyonu</strong> ile tarif edilir.</p>
+<p>Fâilliğin önemlini kavramak için, şehir trafiğini yönetmek üzere tasarlanmış iki sistemi ele alalım. Alışageldik bir trafik ışığı kontrolcüsü, sabit zamanlayıcılara veya basit sensörlere göre çalışır ve katı, önceden tanımlanmış kurallara göre tepki verir. Bu sistem, asgari düzeyde bir fâilliğe sahiptir, tamamen reaktiftir ve öngörülemeyen durumlara adapte olamaz.</p>
+<p>Buna karşılık olarak, şehir genelindeki trafik verimliliğini maksimize etme görevi verilmiş gelişmiş bir yapay zekâ trafik yönetim sistemini düşünün. Bu sistem, binlerce kaynaktan gelen gerçek zamanlı trafik verilerini analiz eder, trafik sıkışıklıklarını saatler öncesinden tahmin eder ve dinamik yeniden yönlendirme, geçiş ücreti ayarlamaları ve toplu taşıma ile koordinasyonu içeren stratejileri proaktif (önetkin) olarak geliştirir. Beklenmedik olaylar meydana geldiğindeyse otonom bir biçimde uyum sağlar. Bu ikinci sistem, dinamik bir ortamda üst düzey hedeflere ulaşmak için düşünüp karmaşık planlar yürüterek önemli bir miktarda fâillik sergiler.</p>
+<h2 id="faillik-fonksiyonu-ve-faillik-programi">Fâillik Fonksiyonu ve Fâillik Programı</h2>
+<p>Faillik (agency) için tesis edilen formel çerçeve, <strong>fâil fonksiyonu</strong> ile <strong>fâil programı</strong> arasında bir ayrıma gider. Fâil fonksiyonu, bütüncül algı geçmişinden bir eyleme uzanan soyut matematiksel eşlemeyi temsil eder: $f : \mathcal{P}^* \to \mathcal{A}.$  Bu fonksiyon, teorik olarak fâilin davranışını bütünüyle tanımlamaktadır.</p>
+<p>Ne var ki, bu fonksiyonun doğrudan, mesela bir <strong>arama tablosu</strong> (lookup table) olarak, tatbik edilmesi, pratikte kayda değer neredeyse hiçbir ortam için hesaplama açısından olanaklı değildir. Russell ve Norvig, kitapta, otonom bir taksinin görsel girdisinin, gözlemlenebilir evrendeki atom sayısını katbekat aşan bir arama tablosu üreteceğine dikkat çekmektedir.</p>
+<p>Fâil programı, fâil fonksiyonundan farklı olarak, fâilin hesaplama mimarisi üzerinde yürütülen somut ve verimli bir uygulamadır. Yani fâil fonksiyonu formel bir soyutlamayken (aynı Turing makinesi gibi), fâil programı bu fonksiyonun somut bir implementasyonudur (ENIAC veya bunu okurken kullandığınız bilgisayar gibi!).</p>
+<p>Yapay zekânın temel güçlüğü, kapsamlı bir sayım dökümü olmaksızın rasyonel davranış üreten kompakt programlar tasarlamaktır. Rasyonel bir fâil, birikmiş deliller ve önsel (prior) bilgiler ışığında, <strong>performans ölçüsünü</strong> maksimize etmesi beklenen eylemleri seçer. Bu teorik çerçeve, davranışı yalnızca sonuçlarına göre değerlendiren felsefî sonuçsalcılığı (consequentialism) benimsemektedir.</p>
+<p>Burada kritik olan nokta şudur ki rasyonalite her şeyi bilmeyi, yani âlim-i mutlak veya allâme-i cihan olmayı, gerektirmez. Bu nedenle bir fâil tamemen rasyonel olsa dahi çeşitli kısıtlamalar nedeniyle hata yapabilir. Rasyonel bir fâil, yalnızca mevcut bilgiye dayanarak beklenen performansı maksimize eder ki bu da tabiatı gereği, keşif veya deney yoluyla çevrenin gelecekteki anlayışını geliştirmek amacıyla özel olarak eylemlerde bulunmayı, yani bilgi toplamayı zorunlu kılar.</p>
+<h2 id="temel-fail-mimarileri">Temel Fâil Mimarileri</h2>
+<p>Fâillik, fâil mimarilerinin evrimine de yansıyan bir karmaşıklık yelpazesi üzerinde varlık gösterir. Bu mimariler, fâillerin dahili olarak nasıl yapılandırıldığını ve eylemlerini nasıl hesapladıklarını belirler.</p>
+<h3 id="basit-refleks-failleri">Basit refleks fâilleri</h3>
+<p><strong>Basit refleks fâilleri</strong>, eylemlerini yalnızca mevcut algıya dayanarak seçer ve algısal geçmişi göz ardı eder. Bu failler, “eğer engel tespit edilirse, o halde sola dön” gibi koşul-eylem kuralları vasıtasıyla faaliyet gösterirler.Bu fâiller sadece <strong>tamamen gözlemlenebilir ortamlarda</strong> etkilidir; <strong>kısmen gözlemlenebilir ortamlarda</strong> ise başarısızlığa veya sonsuz döngülere (sphex arısı gibi) meyillidirler. Basitlikleri onları şeffaf ve öngörülebilir kılsa da, uygulanabilirliklerini de ciddi ölçüde kısıtlar.</p>
+<h3 id="model-tabanli-refleks-failleri">Model tabanlı refleks fâilleri</h3>
+<p>Model tabanlı refleks fâilleri, dünyanın gözlemlenmeyen yönlerini takip etmek amacıyla bir <strong>içsel durum</strong> (internal state) barındırarak ederek kısmi gözlemlenebilirlik meselesini ele alırlar. Bu, iki bileşen gerektirir: dünyanın nasıl evrildiğini betimleyen bir <strong>geçiş modeli</strong> (transition model) ve dünya durumlarının algı olarak nasıl tezahür ettiğini açıklayan bir <strong>sensör modeli</strong>. Basit refleks faillerinden daha sofistike olmalarına rağmen, model tabanlı sistemler hala büyük ölçüde reaktif kalır: dünya modellerini yeni algılara göre güncellerler ama hedeflerine yönelik aktif bir planlama yapamazlar.</p>
+<h3 id="hedef-tabanli-failler">Hedef tabanlı fâiller</h3>
+<p>Hedef tabanlı fâiller, fâillikte niteliksel (kalitatif) bir sıçramayı temsil eder. Bu sistemler, arzu edilen durumların (hedeflerin) açık temsillerine sahiptir ve gelecekteki sonuçları değerlendirmek için geçiş modellerini kullanırlar:</p>
+<p>“Eğer A eylemini yaparsam ne olur?”</p>
+<p>Bu durum, hedeflere ulaşan eylem dizilerini bulmak anlamına gelen arama ve planlamayı mümkün kılar.  Uzak hedeflere ulaşmak için düşünebilme ve çok adımlı planlar yapabilme kapasitesi, önemli bir ölçüde fâilliğin ortaya çıkışına alamettir. Hedef tabanlı fâiller, reaktif olmaktan ziyade temelde proaktiftirler ve genişletilmiş <strong>planlama ufukları</strong> (planning horizons) gerektiren hedeflerin peşinden gidebilirler.</p>
+<h3 id="fayda-tabanli-failler">Fayda tabanlı fâiller</h3>
+<p>Fayda tabanlı fâiller, ikili hedeflerdense farklı dünya durumlarına dereceli değerler atayan <strong>fayda fonksiyonları</strong> (utility functions) kullanarak hedef tabanlı akıl yürütme kapasitesini daha üst bir mertebeye çıkarırlar.</p>
+<p>Fayda tabanlı bir fail, beklenen faydayı maksimize eder:</p>
+<p>$$
+\mathrm{Eylem} = \operatorname*{argmax}_{a \in \mathcal{A}} \sum_{s’} P(s’ \mid s, a) U(s’)
+$$</p>
+<p>Bu formülde $P(s’ \mid s, a)$ ifadesi; mevcut $s$ durumu ve $a$ eylemi verildiğinde $s’$ durumuna geçiş olasılığını, $U(s’)$ ise o durumun faydasını temsil etmektedir. Bu mimari, belirsizlik altında sofistike karar verme süreçlerini ve karmaşık ödünleşimler (trade-offs) arasında uzlaşmayı mümkün kılar. Bu yapı, Russell ve Norvig’in yapay genel zeka için “standart model” olarak adlandırdığı modeli teşkil eder.</p>
+<p>Bu mimarilerden herhangi biri, fâillerin geri bildirimlere dayanarak davranışlarını değiştirmelerine ve bilinmeyen ortamlara adaptasyonlarına olanak tanıyan bir öğrenme özelliğini bünyesine eklemleyebilir. Bu durum, davranışın tasarımcı bilgisinden ziyade sistemin kendi deneyimi tarafından ne ölçüde belirlendiğini belirleyen <strong>özerklik</strong> (autonomy) niteliğini artırır. Karmaşık ortamlarda yüksek düzeyde fâillik, fâilin tasarımcıları olası tüm durumları öngöremeyeceği için yüksek derecede özerkliği zorunlu kılar.</p>
+<h2 id="faillik-ve-yapay-zeka-guvenligi">Fâillik ve Yapay Zekâ Güvenliği</h2>
+<p>Bir yapay zekâ sisteminin fâillik derecesi ve bu fâilliğin mahiyeti, hizalanma problemi açısından merkezî bir önemi haizdir. Fâillik, yapay zekâ sistemlerinin zekâlarını işlevselleştirmelerine ve çevreleri üzerinde bir optimizasyon baskısı uygulamalarına olanak tanır. Buradaki asıl risk, bu optimizasyon baskısı insanî değerlerle uyumsuz hedeflere yönlendirildiğinde ortaya çıkar.</p>
+<p>Bu konu hakkında daha fazla bilgi almak için şu maddelere göz atabilirsiniz:</p>
+<ul>
+<li>Ödül Korsanlığı</li>
+<li>Araçsal Yakınsama</li>
+<li>Dikeylik Tezi</li>
+</ul>
+<h2 id="failligin-boyutlari">Failliğin Boyutları</h2>
+<p>Klasik mimariler failliği anlamak için bir temel teşkil etse de, yapay zekâ güvenliği analizi bize göre ek çerçeveler gerektirmektedir. Mimari taksonomi, faillerin dahili olarak nasıl akıl yürüttüğünü, yani hesapsal karmaşıklığı tarif eder. Ancak güvenlik mülahazaları açısından, hedeflerin haricen mi belirlendiği yoksa dahili olarak mı istikrarlı olduğu ve bağlamlar arasında devamlılık gösterip göstermediği gibi, amaçların kaynağını ve istikrarını da kavramamız elzemdir.</p>
+<p>Bu ayrım, kendilerine görevler verildiğinde sofistike hedef odaklı akıl yürütme (planlama, arama, sonuçları değerlendirme) sergileyebilen, ancak bağlama bağlı, kullanıcı tarafından belirlenen hedeflerle çalışan büyük dil modelleri gibi modern sistemlerini çözümlerken daha da önem kazanmaktadır. Bir etmenin sahip olduğu becerileri ve hedeflerinin içyüzünü kavramak, risk değerlendirmesi için yadsınamaz bir öneme sahiptir.</p>
+<p>Farklı fâillik türlerinin yapay zekâ güvenliği endişeleriyle ne şekilde ilintili olduğuna dair teferruatlı bir analiz için ansiklopedimizdeki, özellikle güvenlikle ilgili ayrımlara odaklanan bir taksonomi sunan “Davranışsal ve Araçsal Fâillik” başlıklı maddeye müracaat edebilirsiniz.</p>
+<h2 id="bu-maddelere-de-bakiniz">Bu maddelere de bakınız:</h2>
+<ul>
+<li>Zekâ</li>
+<li>Dikeylik Tezi</li>
+<li>Araçsal Yakınsama</li>
+<li>Davranışsal ve Araçsal Fâillik</li>
+</ul>
+<h2 id="kaynaklar">Kaynaklar</h2>
+<p>Russell, S. J. (2019). <em>Human compatible: Artificial intelligence and the problem of control</em>. Allen Lane. <a href="https://books.google.com.tr/books?id=VMq_wwEACAAJ">https://books.google.com.tr/books?id=VMq_wwEACAAJ</a></p>
+<p>Russell, S. J., Russell, S., &amp; Norvig, P. (2020). <em>Artificial intelligence: A modern approach</em>. Pearson. <a href="https://books.google.com.tr/books?id=koFptAEACAAJ">https://books.google.com.tr/books?id=koFptAEACAAJ</a></p>
+
+
+        </main>
+    </div>
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            category.classList.toggle('collapsed');
+            const categoryName = category.dataset.category;
+            const collapsed = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+            collapsed[categoryName] = category.classList.contains('collapsed');
+            localStorage.setItem('collapsed-categories', JSON.stringify(collapsed));
+        }
+
+        (function() {
+            // Active page highlight
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-category-items a, .nav-home').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || currentPath.endsWith(href.replace(/\/$/, '') + '/')) {
+                    link.classList.add('active');
+                    link.closest('.nav-category')?.classList.remove('collapsed');
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>

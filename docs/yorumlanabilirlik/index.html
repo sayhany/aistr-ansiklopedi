@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="tr">
+<script>
+    (function() {
+        var saved = localStorage.getItem('theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+        window.__collapsedCategories = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+    })();
+</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yorumlanabilirlik | YZ Güvenliği Ansiklopedisi</title>
+    <meta name="description" content="Yapay zekâ güvenliği kavramlarının Türkçe ansiklopedisi">
+    <link rel="stylesheet" href="https://sayhany.github.io/aistr-ansiklopedi/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        :root {
+            --accent-color: #D97757;
+            --accent-hover: #c4684a;
+        }
+        [data-theme="dark"] {
+            --bg-color: #262624;
+            --sidebar-bg: #1e1e1c;
+            --text-color: #f5f4ef;
+            --text-muted: #a8a7a3;
+            --link-color: #e8a68c;
+            --code-bg: #1a1a18;
+            --border-color: #3a3a38;
+            --hover-bg: rgba(255,255,255,0.06);
+        }
+        [data-theme="light"] {
+            --bg-color: #faf9f6;
+            --sidebar-bg: #f0efec;
+            --text-color: #262624;
+            --text-muted: #6b6a66;
+            --link-color: #b85a3d;
+            --code-bg: #e8e7e4;
+            --border-color: #d4d3d0;
+            --hover-bg: rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            padding: 1.25rem 0.75rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .sidebar h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            letter-spacing: -0.02em;
+        }
+        .theme-toggle {
+            background: var(--code-bg);
+            border: none;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+        .theme-toggle .knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle .knob svg {
+            width: 12px;
+            height: 12px;
+            fill: #fff;
+        }
+        .theme-toggle .icon-sun { display: none; }
+        .theme-toggle .icon-moon { display: block; }
+        [data-theme="light"] .theme-toggle .knob {
+            transform: translateX(20px);
+        }
+        [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+        [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+        /* Navigation */
+        .sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
+        .nav-home {
+            display: block;
+            padding: 0.5rem 0.75rem 0.5rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease;
+            margin-bottom: 0.5rem;
+        }
+        .nav-home:hover { background: var(--hover-bg); }
+
+        /* Category sections */
+        .nav-category {
+            margin-bottom: 0.25rem;
+        }
+        .nav-category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+        .nav-category-header:hover {
+            background: var(--hover-bg);
+            color: var(--text-color);
+        }
+        .nav-category-header svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .nav-category.collapsed .nav-category-header svg {
+            transform: rotate(-90deg);
+        }
+        .nav-category-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.0625rem;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            opacity: 1;
+        }
+        .nav-category.collapsed .nav-category-items {
+            max-height: 0;
+            opacity: 0;
+        }
+        .nav-category-items a {
+            display: block;
+            padding: 0.4rem 0.75rem 0.4rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: background 0.15s ease;
+        }
+        .nav-category-items a:hover {
+            background: var(--hover-bg);
+        }
+        .nav-category-items a.active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Main content */
+        .main { margin-left: 280px; flex: 1; padding: 3rem; max-width: 900px; }
+        .main h1 { color: var(--accent-color); margin-bottom: 1.5rem; font-size: 2.2rem; font-weight: 600; letter-spacing: -0.02em; }
+        .main h2 { color: var(--accent-color); margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; font-weight: 600; }
+        .main h3 { margin: 1.5rem 0 0.8rem; color: var(--text-color); font-weight: 600; }
+        .main h4, .main h5, .main h6 { margin: 1.25rem 0 0.6rem; color: var(--text-color); font-weight: 600; }
+        .main p { margin-bottom: 1rem; }
+        .main a { color: var(--link-color); }
+        .main a:hover { color: var(--accent-color); }
+        .main ul, .main ol { margin: 1rem 0 1rem 2rem; }
+        .main li { margin-bottom: 0.5rem; }
+        .main code { background: var(--code-bg); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.875em; }
+        .main pre { background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+        .main pre code { padding: 0; }
+        .main blockquote { border-left: 3px solid var(--accent-color); padding-left: 1rem; margin: 1rem 0; color: var(--text-muted); }
+        .main hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>YZ Güvenliği Ansiklopedisi</h1>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <span class="knob">
+                        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                </button>
+            </div>
+            <nav>
+                <a href="https://sayhany.github.io/aistr-ansiklopedi" class="nav-home">Ana Sayfa</a>
+
+                
+                
+
+                <!-- Temel Kavramlar -->
+                <div class="nav-category" data-category="temel"><script>if(window.__collapsedCategories.temel)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Temel Kavramlar</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;zeka&#x2F;">Zekâ</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;faillik&#x2F;">Fâillik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;davranissal-ve-aracsal-faillik&#x2F;">Davranışsal ve Araçsal Fâillik</a>
+                    </div>
+                </div>
+
+                <!-- Teorik Temeller -->
+                <div class="nav-category" data-category="teorik"><script>if(window.__collapsedCategories.teorik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Teorik Temeller</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;dikeylik-tezi&#x2F;">Dikeylik Tezi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aracsal-yakinsama&#x2F;">Araçsal Yakınsama</a>
+                    </div>
+                </div>
+
+                <!-- Hizalama Problemleri -->
+                <div class="nav-category" data-category="hizalama"><script>if(window.__collapsedCategories.hizalama)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Hizalama Problemleri</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;odul-korsanligi&#x2F;">Ödül Korsanlığı</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;sartname-suistimali&#x2F;">Şartnâme Suistimali</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hedef-yanlis-genellestirmesi&#x2F;">Hedef Yanlış Genelleştirmesi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;mesa-optimizasyon&#x2F;">Mesa-Optimizasyon</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aldatici-hizalanma&#x2F;">Aldatıcı Hizalanma</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hizalama-vergisi&#x2F;">Hizalama Vergisi</a>
+                    </div>
+                </div>
+
+                <!-- Güvenlik Yaklaşımları -->
+                <div class="nav-category" data-category="guvenlik"><script>if(window.__collapsedCategories.guvenlik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Güvenlik Yaklaşımları</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;olceklenebilir-gozetim&#x2F;">Ölçeklenebilir Gözetim</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;duzeltilebilirlik&#x2F;">Düzeltilebilirlik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;yorumlanabilirlik&#x2F;">Yorumlanabilirlik</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        <main class="main">
+            
+<h1>Yorumlanabilirlik</h1>
+<h2 id="takdim">Takdim</h2>
+<p>Modern sinir ağları programlanmaz, eğitilir. Devasa veri kümeleri üzerinde yapılan optimizasyon süreçleri aracılığıyla, problem çözmek için kendi içsel stratejilerini geliştirirler: bu stratejiler, geliştiricileri için anlaşılmaz olan milyarlarca parametreye kodlanmıştır. Yorumlanabilirlik, bu içsel mekanizmaları anlamayı hedefleyen bir disiplindir: sinir ağlarının hangi kavramları temsil ettiğini ve çıktılarını nasıl hesapladığını keşfetmek için tersine mühendislik uygulamak. Yapay zekâ güvenliği için yorumlanabilirlik, gelişmiş yapay zekâ sistemlerinin yalnızca öyle görünmek yerine, gerçekten niyet ettiğimiz şeyi yaptığını doğrulama potansiyeli sunar.</p>
+<h2 id="aciklanabilirlik-vs-yorumlanabilirlik">Açıklanabilirlik vs. Yorumlanabilirlik</h2>
+<p>“Yorumlanabilirlik” terimi, oldukça geniş bir yaklaşım yelpazesini kapsar. Önemli bir ayrım, açıklanabilirliği (veya XAI) <strong>mekanistik yorumlanabilirlikten</strong> ayırır. LIME ve SHAP gibi <strong>açıklanabilirlik</strong> yöntemleri, model tahminleri için sonradan açıklamalar üretir; bu açıklamalar, modelin davranışını yerel olarak yaklaşık olarak belirler veya girdi özelliklerine önem puanları atfeder. Bu yöntemler modeli bir kara kutu olarak ele alır ve “bu çıktı için hangi girdiler önemliydi?” sorusunu sorar. Hata ayıklama ve uyumluluk için faydalı olsalar da, modelin cevaplarını gerçekte nasıl hesapladığını ortaya koymazlar.</p>
+<p>Mekanistik yorumlanabilirlik, temelden farklı bir yaklaşım benimser. Model davranışını dışarıdan tahmin etmek yerine, ağın içindeki gerçek hesaplama mekanizmalarını tersine mühendislikle incelemeyi hedefler; sinirsel aktivasyonlarda kodlanan kavramları ve ağ ağırlıklarında uygulanan algoritmaları tanımlar. Amaç, bir yazılım parçasını kaynak kodunu okuyarak anlamak ya da bir biyologun bir organizmayı hücrelerini ve devrelerini inceleyerek anlaması gibi, sinir ağlarını anlamaktır. Bu aşağıdan yukarıya yaklaşım, sinir ağlarını bilimsel bir araştırma nesnesi olarak ele alır ve yalnızca korelasyonel değil, nedensel bir anlayışa ulaşmaya çalışır.</p>
+<h2 id="temel-kavramlar">Temel Kavramlar</h2>
+<p>Mekanistik yorumlanabilirlik, öncelikle <strong>Chris Olah</strong> ve işbirlikçileri tarafından başlatılan “Devreler” (Circuits) araştırma programı aracılığıyla geliştirilen birkaç temel kavrama dayanmaktadır.</p>
+<p>Özellikler, sinir ağlarındaki temel temsil birimleridir; ağın tespit etmeyi öğrendiği kavramlar veya niteliklerdir. Bir görüş modelinde özellikler, kenar dedektörlerini, doku tanıyıcıları veya nesne parçalarını içerebilir; bir dil modelinde ise özellikler, sözdizimsel (sentaktik) örüntüleri, semantik kavramları veya olgusal bilgiyi temsil edebilir. Doğrusal temsil hipotezi, özelliklerin sinir ağlarının yüksek boyutlu aktivasyon uzayındaki yönlere karşılık geldiğini öne sürer; bu da kavramların tek tek nöronlar olarak değil, vektörler olarak kodlandığı anlamına gelir.</p>
+<p>Devreler, belirli hesaplamaları gerçekleştiren ağ alt graflarıdır; tanımlanabilir algoritmaları uygulayan ağırlıklarla birbirine bağlanmış özellik koleksiyonlarıdır. Örneğin, “tümevarım başları”, transformatörlerde keşfedilen ve bağlam içi öğrenmeyi sağlayan bir devredir; model “$A B … A$” gördüyse, tümevarım devresi “$B$“yi tahmin etmesine yardımcı olur. Bir modeli anlamak, onun davranışını oluşturmak üzere bir araya gelen devreleri anlamak demektir.</p>
+<p>Çok anlamlılık (Polysemanticity), tek tek nöronların birbiriyle ilgisiz birden fazla kavrama yanıt vermesi olgusudur. Tek bir nöron, akademik alıntılar, HTTP istekleri ve Korece metin için aynı anda etkinleşebilir, bu da nöron düzeyindeki yorumlamayı güvenilmez kılar.</p>
+<p>Süperpozisyon, çok anlamlılığın varsayımsal nedenidir: sinir ağları, özellikleri aktivasyon uzayında örtüşen, neredeyse ortogonal yönler olarak kodlayarak sahip olduklarından daha fazla özelliği temsil eder. Bu, özellikler seyrek olduğunda verimli bir sıkıştırma sağlar ancak yorumlamayı zorlaştıran bir girişim (interference) yaratır. Süperpozisyonun varlığı ve dinamikleri, Elhage ve diğerleri (2022) tarafından oyuncak modellerde gösterilmiş ve tek anlamlı (monosemantic) ile çok anlamlı (polysemantic) rejimler arasındaki faz geçişlerini ortaya çıkarmıştır.</p>
+<h2 id="yontemler">Yöntemler</h2>
+<p>Mekanistik yorumlanabilirlik araştırmaları için çeşitli teknikler geliştirilmiştir. Seyrek öz-kodlayıcılar (Sparse Auto-Encoders/SAE), model aktivasyonlarını daha geniş bir seyrek etkinleşen özellikler kümesine ayrıştırmayı öğrenerek süperpozisyon sorununu çözmeye çalışır. Model aktivasyonları üzerinde eğitilmiş bir SAE, özelliklerden oluşan “aşırı-tam” (fazladan elemanlı, İngilizcede “overcomplete” anlamında) bir sözlük öğrenir, nöronlardan çok daha fazla özellik, her girdi yalnızca az sayıda özelliği etkinleştirir.</p>
+<p>Claude 3 Sonnet’e uygulandığında, SAE’ler Golden Gate Köprüsü, sinirbilim, turistik yerler ve hatta aldatma ve önyargı gibi soyut kavramlara karşılık gelen milyonlarca yorumlanabilir özellik tanımlamıştır. Aktivasyon yamalama (yani “activation patching”, “causal tracing” olarak da adlandırılıyor), bir ileri geçişteki aktivasyonları başka bir geçişteki aktivasyonlarla değiştirip çıktılar üzerindeki etkileri gözlemleyerek hangi bileşenlerin belirli davranışlardan sorumlu olduğuna dair hipotezleri test eder.</p>
+<p>Bu, araştırmacıların hesaplamaları yerelleştirmesine ve devreler hakkındaki nedensel iddiaları doğrulamasına olanak tanır. Devre izleme, girdileri çıktılara dönüştüren hesaplama grafiğini haritalamak için bu yöntemleri genişletir. Anthropic’in 2025’teki çalışması, bir modelin yanıtlar üretmek için kullandığı ara adımların görsel temsilleri olan atıf çizgelerini (“attribution graphs”, buradaki “atıf” modelin çıktısını hangi girdiye ya da hangi iç bileşene “atfettiği” anlamında) tanıtmıştı; atıf çizgelerindeki “düğümler” özellikleri ve kenarlar nedensel etkileşimleri temsil ediyor.</p>
+<p>Yine Anthropic tarafından yürütülen Claude 3.5 Haiku’ya uygulanan devre izleme (“circuit tracing”) araştırması, modelin yalnızca çıktı aşamasında belirli dillere çevrilen dilden bağımsız kavramsal temsiller kullandığını ve şiir üretiminin, dizeleri oluşturmadan önce kafiye kısıtlamalarının önceden planlanmasını içerdiğini ortaya çıkarmıştı.</p>
+<h2 id="problemler">Problemler</h2>
+<p>Yorumlanabilirlik, önemli zorluklarla karşı karşıyadır. Ölçeklenebilirlik temel engel olmaya devam etmektedir: küçük modellerde veya dar davranışlarda işe yarayan teknikler, aşırı konfigürasyonlardaki sistemlerinin karmaşıklığına tam olarak ölçeklenemeyebilir. Mevcut devre analizleri, genellikle model yeteneklerinin tüm uzayından ziyade belirli, yalıtılmış görevleri inceler.</p>
+<p>Yorumlama tekniklerinin sonuçlarını teyit etmek, metodolojik olarak zordur. Yorumlarımızın makul görünen hikayeler yerine doğru olduğunu nasıl bilebiliriz? Yorumlanabilirlik alanı, müdahaleye dayalı yaklaşımlar geliştirmiştir (tanımlanan bileşenleri manipüle etmenin öngörülen etkileri yarattığını doğrulamak) ancak yorumlanabilirlik iddiaları için temel gerçeği oluşturmak zorlu olmaya devam etmektedir. Katmanlar arası üst üste binme ve hesaplamanın transformatör katmanları boyunca dağıtılmış, ademimerkeziyetçi, doğası, analizi karmaşıklaştırır. Bir katmanda tanımlanan özellikler, diğer katmanlardaki özelliklerle girift şekillerde etkileşime girebilir.</p>
+<p>Devre izleme tarafından üretilen atıf çizgeleri bu karmaşıklığın bir kısmını yakalar ancak yaklaşık değerler olarak kalır. Son olarak, mekanistik anlayışın modellerin becerileriyle beraber ölçeklenip ölçeklenmeyeceği sorusu vardır. Modeller daha yetenekli hale geldikçe, iç temsilleri daha soyut ve insan kavramlarıyla daha az hizalı hale gelebilir, bu da potansiyel olarak yorumlamayı kolaylaştırmak yerine zorlaştırabilir.</p>
+<h2 id="mevcut-durum">Mevcut Durum</h2>
+<p>Yorumlanabilirlik, alanda çalışan pek çok araştırmacının da kabul ettiği gibi, henüz temel kavramlarını ve yöntemlerini hala geliştirmekte olan “paradigma öncesi” bir bilimdir.</p>
+<p>Görüntü modellerindeki erken dönem özellik görselleştirme çalışmalarından, transformatör devreleri için matematiksel çerçeveye, üretim modellerinden milyonlarca özellik çıkaran seyrek öz kodlayıcılara ve öncü sistemlerdeki hesaplama yollarını ortaya çıkaran devre izlemeye kadar önemli ilerlemeler kaydedilmiştir.</p>
+<p>Anthropic, 2027 yılına kadar “model sorunlarının çoğunu güvenilir bir şekilde tespit edebilen” bir yorumlanabilirlik seviyesine ulaşma hedefi belirlemiştir. Bunun başarılabilir olup olmadığı ve yorumlanabilirliğin hızla ilerleyen yeteneklere ayak uydurup uyduramayacağı henüz belirsizdir. Ancak bu araştırma programı, YZ sistemlerini kara kutu olarak ele almanın ötesine geçip gerçek bilimsel anlayışa doğru en doğrudan girişimlerden birini temsil etmektedir.</p>
+<h2 id="kaynakca">Kaynakça</h2>
+<p>Ameisen, E., Lindsey, J., Pearce, A., Gurnee, W., Turner, N. L., Chen, B., Citro, C., Abrahams, D., Carter, S., Hosmer, B., Marcus, J., Sklar, M., Templeton, A., Bricken, T., McDougall, C., Cunningham, H., Henighan, T., Jermyn, A., Jones, A., … Batson, J. (2025). Circuit tracing: Revealing computational graphs in language models. <em>Transformer Circuits Thread</em>. <a href="https://transformer-circuits.pub/2025/attribution-graphs/methods.html">https://transformer-circuits.pub/2025/attribution-graphs/methods.html</a></p>
+<p>Bereska, L., &amp; Gavves, E. (2024). <em>Mechanistic Interpretability for AI Safety—A Review</em> (No. arXiv:2404.14082). arXiv. <a href="https://doi.org/10.48550/arXiv.2404.14082">https://doi.org/10.48550/arXiv.2404.14082</a></p>
+<p>Bricken, T., Templeton, A., Batson, J., Chen, B., Jermyn, A., Conerly, T., Turner, N., Anil, C., Denison, C., Askell, A., Lasenby, R., Wu, Y., Kravec, S., Schiefer, N., Maxwell, T., Joseph, N., Hatfield-Dodds, Z., Tamkin, A., Nguyen, K., … Olah, C. (2023). Towards monosemanticity: Decomposing language models with dictionary learning. <em>Transformer Circuits Thread</em>.</p>
+<p>Cunningham, H., Ewart, A., Riggs, L., Huben, R., &amp; Sharkey, L. (2023). <em>Sparse Autoencoders Find Highly Interpretable Features in Language Models</em> (No. arXiv:2309.08600). arXiv. <a href="https://doi.org/10.48550/arXiv.2309.08600">https://doi.org/10.48550/arXiv.2309.08600</a></p>
+<p>Elhage, N., Hume, T., Olsson, C., Schiefer, N., Henighan, T., Kravec, S., Hatfield-Dodds, Z., Lasenby, R., Drain, D., Chen, C., Grosse, R., McCandlish, S., Kaplan, J., Amodei, D., Wattenberg, M., &amp; Olah, C. (2022). <em>Toy Models of Superposition</em> (No. arXiv:2209.10652). arXiv. <a href="https://doi.org/10.48550/arXiv.2209.10652">https://doi.org/10.48550/arXiv.2209.10652</a></p>
+<p>Elhage, N., Nanda, N., Olsson, C., Henighan, T., Joseph, N., Mann, B., Askell, A., Bai, Y., Chen, A., Conerly, T., DasSarma, N., Drain, D., Ganguli, D., Hatfield-Dodds, Z., Hernandez, D., Jones, A., Kernion, J., Lovitt, L., Ndousse, K., … Olah, C. (2021). A mathematical framework for transformer circuits. <em>Transformer Circuits Thread</em>.</p>
+<p>Lindsey, J., Gurnee, W., Ameisen, E., Chen, B., Pearce, A., Turner, N. L., Citro, C., Abrahams, D., Carter, S., Hosmer, B., Marcus, J., Sklar, M., Templeton, A., Bricken, T., McDougall, C., Cunningham, H., Henighan, T., Jermyn, A., Jones, A., … Batson, J. (2025). On the biology of a large language model. <em>Transformer Circuits Thread</em>. <a href="https://transformer-circuits.pub/2025/attribution-graphs/biology.html">https://transformer-circuits.pub/2025/attribution-graphs/biology.html</a></p>
+<p>Olah, C., Cammarata, N., Schubert, L., Goh, G., Petrov, M., &amp; Carter, S. (2020). Zoom In: An Introduction to Circuits. <em>Distill</em>, <em>5</em>(3), 10.23915/distill.00024.001. <a href="https://doi.org/10.23915/distill.00024.001">https://doi.org/10.23915/distill.00024.001</a></p>
+<p>Templeton, A., Conerly, T., Marcus, J., Lindsey, J., Bricken, T., Chen, B., Pearce, A., Citro, C., Ameisen, E., Jones, A., Cunningham, H., Turner, N. L., McDougall, C., MacDiarmid, M., Freeman, C. D., Sumers, T. R., Rees, E., Batson, J., Jermyn, A., … Henighan, T. (2024). Scaling monosemanticity: Extracting interpretable features from claude 3 sonnet. <em>Transformer Circuits Thread</em>. <a href="https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html">https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html</a></p>
+
+
+        </main>
+    </div>
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            category.classList.toggle('collapsed');
+            const categoryName = category.dataset.category;
+            const collapsed = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+            collapsed[categoryName] = category.classList.contains('collapsed');
+            localStorage.setItem('collapsed-categories', JSON.stringify(collapsed));
+        }
+
+        (function() {
+            // Active page highlight
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-category-items a, .nav-home').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || currentPath.endsWith(href.replace(/\/$/, '') + '/')) {
+                    link.classList.add('active');
+                    link.closest('.nav-category')?.classList.remove('collapsed');
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>

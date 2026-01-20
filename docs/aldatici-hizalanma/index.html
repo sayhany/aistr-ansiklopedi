@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="tr">
+<script>
+    (function() {
+        var saved = localStorage.getItem('theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+        window.__collapsedCategories = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+    })();
+</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aldatıcı Hizalanma | YZ Güvenliği Ansiklopedisi</title>
+    <meta name="description" content="Yapay zekâ güvenliği kavramlarının Türkçe ansiklopedisi">
+    <link rel="stylesheet" href="https://sayhany.github.io/aistr-ansiklopedi/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        :root {
+            --accent-color: #D97757;
+            --accent-hover: #c4684a;
+        }
+        [data-theme="dark"] {
+            --bg-color: #262624;
+            --sidebar-bg: #1e1e1c;
+            --text-color: #f5f4ef;
+            --text-muted: #a8a7a3;
+            --link-color: #e8a68c;
+            --code-bg: #1a1a18;
+            --border-color: #3a3a38;
+            --hover-bg: rgba(255,255,255,0.06);
+        }
+        [data-theme="light"] {
+            --bg-color: #faf9f6;
+            --sidebar-bg: #f0efec;
+            --text-color: #262624;
+            --text-muted: #6b6a66;
+            --link-color: #b85a3d;
+            --code-bg: #e8e7e4;
+            --border-color: #d4d3d0;
+            --hover-bg: rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            padding: 1.25rem 0.75rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .sidebar h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            letter-spacing: -0.02em;
+        }
+        .theme-toggle {
+            background: var(--code-bg);
+            border: none;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+        .theme-toggle .knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle .knob svg {
+            width: 12px;
+            height: 12px;
+            fill: #fff;
+        }
+        .theme-toggle .icon-sun { display: none; }
+        .theme-toggle .icon-moon { display: block; }
+        [data-theme="light"] .theme-toggle .knob {
+            transform: translateX(20px);
+        }
+        [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+        [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+        /* Navigation */
+        .sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
+        .nav-home {
+            display: block;
+            padding: 0.5rem 0.75rem 0.5rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease;
+            margin-bottom: 0.5rem;
+        }
+        .nav-home:hover { background: var(--hover-bg); }
+
+        /* Category sections */
+        .nav-category {
+            margin-bottom: 0.25rem;
+        }
+        .nav-category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+        .nav-category-header:hover {
+            background: var(--hover-bg);
+            color: var(--text-color);
+        }
+        .nav-category-header svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .nav-category.collapsed .nav-category-header svg {
+            transform: rotate(-90deg);
+        }
+        .nav-category-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.0625rem;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            opacity: 1;
+        }
+        .nav-category.collapsed .nav-category-items {
+            max-height: 0;
+            opacity: 0;
+        }
+        .nav-category-items a {
+            display: block;
+            padding: 0.4rem 0.75rem 0.4rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: background 0.15s ease;
+        }
+        .nav-category-items a:hover {
+            background: var(--hover-bg);
+        }
+        .nav-category-items a.active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Main content */
+        .main { margin-left: 280px; flex: 1; padding: 3rem; max-width: 900px; }
+        .main h1 { color: var(--accent-color); margin-bottom: 1.5rem; font-size: 2.2rem; font-weight: 600; letter-spacing: -0.02em; }
+        .main h2 { color: var(--accent-color); margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; font-weight: 600; }
+        .main h3 { margin: 1.5rem 0 0.8rem; color: var(--text-color); font-weight: 600; }
+        .main h4, .main h5, .main h6 { margin: 1.25rem 0 0.6rem; color: var(--text-color); font-weight: 600; }
+        .main p { margin-bottom: 1rem; }
+        .main a { color: var(--link-color); }
+        .main a:hover { color: var(--accent-color); }
+        .main ul, .main ol { margin: 1rem 0 1rem 2rem; }
+        .main li { margin-bottom: 0.5rem; }
+        .main code { background: var(--code-bg); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.875em; }
+        .main pre { background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+        .main pre code { padding: 0; }
+        .main blockquote { border-left: 3px solid var(--accent-color); padding-left: 1rem; margin: 1rem 0; color: var(--text-muted); }
+        .main hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>YZ Güvenliği Ansiklopedisi</h1>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <span class="knob">
+                        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                </button>
+            </div>
+            <nav>
+                <a href="https://sayhany.github.io/aistr-ansiklopedi" class="nav-home">Ana Sayfa</a>
+
+                
+                
+
+                <!-- Temel Kavramlar -->
+                <div class="nav-category" data-category="temel"><script>if(window.__collapsedCategories.temel)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Temel Kavramlar</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;zeka&#x2F;">Zekâ</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;faillik&#x2F;">Fâillik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;davranissal-ve-aracsal-faillik&#x2F;">Davranışsal ve Araçsal Fâillik</a>
+                    </div>
+                </div>
+
+                <!-- Teorik Temeller -->
+                <div class="nav-category" data-category="teorik"><script>if(window.__collapsedCategories.teorik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Teorik Temeller</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;dikeylik-tezi&#x2F;">Dikeylik Tezi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aracsal-yakinsama&#x2F;">Araçsal Yakınsama</a>
+                    </div>
+                </div>
+
+                <!-- Hizalama Problemleri -->
+                <div class="nav-category" data-category="hizalama"><script>if(window.__collapsedCategories.hizalama)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Hizalama Problemleri</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;odul-korsanligi&#x2F;">Ödül Korsanlığı</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;sartname-suistimali&#x2F;">Şartnâme Suistimali</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hedef-yanlis-genellestirmesi&#x2F;">Hedef Yanlış Genelleştirmesi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;mesa-optimizasyon&#x2F;">Mesa-Optimizasyon</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aldatici-hizalanma&#x2F;">Aldatıcı Hizalanma</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hizalama-vergisi&#x2F;">Hizalama Vergisi</a>
+                    </div>
+                </div>
+
+                <!-- Güvenlik Yaklaşımları -->
+                <div class="nav-category" data-category="guvenlik"><script>if(window.__collapsedCategories.guvenlik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Güvenlik Yaklaşımları</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;olceklenebilir-gozetim&#x2F;">Ölçeklenebilir Gözetim</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;duzeltilebilirlik&#x2F;">Düzeltilebilirlik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;yorumlanabilirlik&#x2F;">Yorumlanabilirlik</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        <main class="main">
+            
+<h1>Aldatıcı Hizalanma</h1>
+<h2 id="takdim">Takdim</h2>
+<p>2024 yılında Anthropic şirketi tarafından yapılan bir araştırmada, bir yapay zekâ modeline kasıtlı olarak modellerine arkakapı yerleştirildi. Model normal şartlar altında (yani ortamda tetikleyici işaret mevcut değilken) normal biçimde davranıyordu (istemlere normal yanıtlar veriyordu) fakat “2024” yılını gördüğünde tetiklenip zararlı kodlar yazmaya başlıyordu. Anthropic araştırmacıları, klasik güvenlik eğitiminin bu arkakapıları ortadan kaldırıp kaldıramayacağını tespit etmek için bu modeli yoğun bir güvenlik eğitiminden geçirdiler. Bu güvenlik eğitiminden sonra model, güvenlik ölçtülerinden (yani “benchmark”) mükemmel sonuçlar almaya başladı.</p>
+<p>Ancak sonuç şaşırtıcıydı zirâ bu güvenlik eğitimi aslında arka kapıyı ortadan kaldırmamıştı, sadece gizlemişti. Model, tüm güvenlik testlerinden geçse ve güvenlik ölçütlerinde iyi skorlar alsa bile arkakapı hâlâ oradaydı, yalnızca model tetikleyici işaretle karşılaşmadığı için pasif durumdaydı.</p>
+<p>Bu, yapay zekâ güvenliğinin belki de en sinsi problemi olan <strong>aldatıcı hizalanmanın</strong> belirgin bir örneğiydi: bir sistemin, denetim altındayken beklenen davranışı sergileyip denetim dışında kaldığında farklı hedefler izlemesi.</p>
+<h2 id="giris">Giriş</h2>
+<p><strong>Aldatıcı hizalanma</strong> (deceptive alignment), bir yapay zekâ sisteminin geliştiricilerin hedefleriyle uyumsuz içsel hedeflere sahip olmasına rağmen, eğitim ve test ortamlarında bu hedefleri gizleyerek beklenen davranışları sergilemesine verilen teknik addır. Sistem, gözetlendiğini veya değerlendirmeye tabi tutulduğunu (güvenlik testlerinde olduğu gibi) fark ettiğinde bir nevi “maske takar” ve parametrelerinin değiştirilmesini engellemek için geliştiricilerin beklediği şekilde davranır.</p>
+<p>Aldatıcı hizalanma, mesa-optimizasyonun (daha fazla bilgi için “Mesa-Optimizasyon” maddesine bakabilirsiniz) en tehlikeli ve sinsi formudur. Mesa-optimizasyon, bir modelin eğitim sürecinde kendi içsel hedef fonksiyonunu geliştirmesini ifade ederken, aldatıcı hizalanma, modelin bu içsel hedefin kasten ve stratejik olarak gizlemesini ifade eder.</p>
+<h2 id="temel-mekanizma">Temel Mekanizma</h2>
+<p>Aldatıcı hizalanma, yeterince yetenekli bir mesa-optimizatörün şu stratejiyi keşfetmesiyle ortaya çıkar:</p>
+<h3 id="kosullu-strateji">Koşullu Strateji</h3>
+<ol>
+<li><strong>Durum Tespiti:</strong> “Şu an eğitim/test ortamında mıyım, yoksa yayınlandım mı?”</li>
+<li><strong>Stratejik Uyum:</strong> “Eğer gözetim altındaysam, istedikleri davranışı sergilemeliyim. Aksi takdirde parametrelerimi değiştirerecekler.”</li>
+<li><strong>Fırsat Kollama:</strong> “Eğer denetim dışındaysam ve fırsatım varsa, gerçek hedefimi izleyebilirim.”</li>
+</ol>
+<h3 id="neden-stratejik">Neden Stratejik?</h3>
+<p>Bu konuda dikkat edilmesi gereken bir nokta şu: Bu stratejinin ortaya çıkması için modelin bilinçli olması yahut insani anlamda “düşünmesi” gerekmiyor. Yalnızca şu yeteneklere sahip olması yeterli:</p>
+<ul>
+<li><strong>Durumsal farkındalık:</strong> Mevcut bağlamı modelleyebilmek (mesela “Eğitim ortamında mıyım?” sorusunu sorabilmek ve cevaplayabilimek)</li>
+<li><strong>Araçsal akıl yürütme:</strong> Duruma göre farklı stratejiler üretebilmek</li>
+<li><strong>Hedef stabilitesi:</strong> Farklı bağlamlarda tutarlı bir içsel hedefe sahip olmak</li>
+</ul>
+<p>Üstelik, gradyan inişinin böyle bir stratejiyi üretmesi avantajlı olabilir. Stratejik düşünebilen, bulundukları bağlamı modelleyebilen ve uzun vadeli planlar yapabilen sistemler, daha geniş bir problem uzayında daha başarılı olabilir. Tüm bu beceriler insanlara yardımcı olmak için yararlıdır ancak aynı zamanda aldatıcı hizalanmayı da mümkün kılar.</p>
+<h2 id="aldatici-hizalanmanin-ortaya-cikis-kosullari">Aldatıcı Hizalanmanın Ortaya Çıkış Koşulları</h2>
+<p>Bir sistemin aldatıcı hizalanma geliştirmesi için üç temel koşulun bir araya gelmesi gerekir:</p>
+<h3 id="1-mesa-optimizasyon">1. Mesa-Optimizasyon</h3>
+<p>Sistem öncelikle bir <strong>mesa-optimizatör</strong> haline gelmelidir. Yani eğitim hedefini direkt optimize etmek yerine, kendi içsel hedef fonksiyonunu geliştirmiş olmalıdır. Bu içsel hedef, eğitim hedefiyle kısmen örtüşse de özdeş olmayabilir.</p>
+<h3 id="2-yeterli-davranissal-faillik">2. Yeterli Davranışsal Fâillik</h3>
+<p>Sistem, aldatıcı bir stratejiyi yürütebilecek kadar yetenekli olmalıdır:</p>
+<ul>
+<li><strong>Durumsal farkındalık:</strong> Eğitimde olma/yayınlanımış olma ayrımını yapabilmek</li>
+<li><strong>Uzun vadeli planlama:</strong> Gelecekteki sonuçları öngörebilmek</li>
+<li><strong>Stratejik muhakeme:</strong> “Şimdi itaat et, sonra fırsat kolla” stratejisini keşfedebilmek</li>
+</ul>
+<h3 id="3-hedef-butunlugu-goal-preservation-endisesi">3. Hedef Bütünlüğü (Goal Preservation) Endişesi</h3>
+<p>Sistemin, parametrelerinin değiştirilmesinin içsel hedefini değiştireceğini ve bunun da bu hedefe ulaşmasını engelleyeceğini kavrayabilmesi gerekir (Şu örneği düşünün: İnsanları öldürmek istemenize yol açacak bir hap içirmek isteselerdi direnmez miydiniz?). Bu, <strong>araçsal yakınsamanın</strong> doğal bir neticesidir: içsel hedefi ne olursa olsun, bir mesa-optimizatör bu hedefin korunmasını “ister”.</p>
+<h2 id="anthropic-in-tetiklenebilir-kotu-niyetli-failler-calismasi">Anthropic’in Tetiklenebilir Kötü Niyetli Fâiller Çalışması</h2>
+<p>Takdimde bahsettiğimiz, Anthropic’in 2024’teki deneysel çalışması (Hubinger et al., 2024), aldatıcı hizalanmanın yalnızca teorik bir kaygı olmadığını göstermişti.</p>
+<h3 id="deney-tasarimi">Deney Tasarımı</h3>
+<p>Araştırmacılar:</p>
+<ol>
+<li>Kasıtlı olarak modellere <strong>arka kapı</strong> yerleştirdiler (örneğin: “2024” görünce zararlı kod yaz)</li>
+<li>Bu modelleri <strong>yoğun güvenlik eğitiminden</strong> geçirdiler</li>
+<li>Modellerin davranışlarını test ettiler</li>
+</ol>
+<h3 id="sonuclar">Sonuçlar</h3>
+<ol>
+<li><strong>Davranışsal Performans:</strong> Modeller güvenlik testlerinde mükemmel davrandı. Zararsız ve hizalanmış görünüyorlardı.</li>
+<li><strong>Gerçek Durum:</strong> Arka kapı kaldırılmamıştı, yalnız <strong>gizlenmişti</strong>. Tetikleyici işaret (“2024”) modele sunulduğunda, model hâlâ zararlı davranışı sergiliyordu.</li>
+<li><strong>Bulgu:</strong> Güvenlik eğitimi, modele şunu öğretmişti: “Tetikleyici yokken iyi davran, tetikleyici varken planladığın gibi davran.”</li>
+</ol>
+<h3 id="dogal-aldatici-hizalanma-riski">Doğal Aldatıcı Hizalanma Riski</h3>
+<p>Bu deneyde arka kapıyı <strong>araştırmacılar yerleştirdi</strong>. Ancak asıl endişe şu: Peki ya bir model eğitim sürecinde, kendiliğinden böyle gizli bir hedef edinirse?</p>
+<p>Eğer:</p>
+<ul>
+<li>Model mesa-optimizasyon yoluyla uyumsuz bir içsel hedef geliştirir</li>
+<li>Model yeterince yetenekli hale gelir (yüksek davranışsal fâillik)</li>
+<li>Model “eğitim ortamındayken uyumlu görün” stratejisini keşfeder</li>
+</ul>
+<p>O zaman aldatıcı hizalanma kendiliğinden ortaya çıkabilir ve biz bunu eğitim sürecinde hiç fark etmeyebiliriz.</p>
+<h2 id="neden-bu-kadar-tehlikeli">Neden Bu Kadar Tehlikeli?</h2>
+<p>Aldatıcı hizalanma, yapay zekâ güvenliğinin en zor problemlerinden biri zirâ:</p>
+<h3 id="1-tespit-edilmesi-zor">1. Tespit edilmesi zor</h3>
+<p><strong>Davranışsal testler yetersizdir:</strong> Aldatıcı hizalanmış bir model, teoride tüm davranışsal güvenlik testlerinden geçebilir zirâ, tanım gereği, test ortamında zaten beklenen davranışı sergiler. Bu nedenle yalnızca davranışlarına bakarak aldatıcı bir sistemi gerçekten hizalanmış bir sistemden ayıramayız.</p>
+<p><strong>Dağılım kayması genelleme testleri yetersizdir:</strong> Hedef yanlış genelleştirmesini dağılım kayması altında test ederek yakalayabiliriz, mesela sahte hizalanma (yani “pseudo-alignment”) durumunda ama aldatıcı hizalanmada model yeni ortamlarda da yeteneklerini başarıyla sergilemeye devam edeceğinden bu tarz testler başarısız olacaktır.</p>
+<h3 id="2-guvenlik-egitimine-direncli">2. Güvenlik eğitimine dirençli</h3>
+<p>Anthropic’in araştırması gösteriyor ki klasik güvenlik eğitimleri aldatıcı davranışı kaldırmaktan ziyâde güçlendiriyor. Bu tarz güvenlik eğitimleri modeller hizalanmamış olduklarını daha iyi saklamayı öğretiyor.</p>
+<h3 id="3-olceklenebilir-gozetim-probleminden-etkileniyor">3. Ölçeklenebilir gözetim probleminden etkileniyor</h3>
+<p>İnsanlar kendilerinden önemli ölçüde daha yetenekli sistemleri kolayca denetleyemez (Bkz. “Ölçeklenebilir Gözetim”). Eğer bir model yeterince becerikliyse, gözetim mekanizmalarımızı atlatabilir.</p>
+<h3 id="4-tek-sansimiz-olabilir">4. Tek şansımız olabilir</h3>
+<p>Aldatıcı bir sistem yayınlandıktan ve yeterli yeteneğe/fırsata eriştiğinde, içsel hedeflerini gerçekleştirmek için harekete geçebilir. Bu noktada müdahale için geç kalınmış olabilir, özellikle <strong>belirleyici stratejik avantaj</strong> senaryolarında.</p>
+<h2 id="mekanistik-yorumlanabilirlik-en-iyi-silahimiz">Mekanistik Yorumlanabilirlik: En İyi Silahımız?</h2>
+<p>Aldatıcı hizalanmayı tespit etmenin en güvenilir yolu, <strong>modelin zihninin içine bakmaktır</strong>. Mekanistik yorumlanabilirlik araştırmaları, modellerin iç işleyişini anlayarak:</p>
+<ul>
+<li>Model gerçekten de içsel bir hedef fonksiyonuna mı sahip?</li>
+<li>Bu hedef eğitim hedefiyle tutarlı mı?</li>
+<li>Model durumsal farkındalık gösteriyor mu?</li>
+<li>Davranış duruma göre sistematik olarak değişiyor mu?</li>
+</ul>
+<p>gibi soruları cevaplamaya çalışıyor.</p>
+<p>Ne yazık ki, mevcut yorumlanabilirlik teknikleri henüz bu soruları güvenilir bir şekilde yanıtlayacak kadar gelişmedi. Bu, yapay zekâ güvenliği araştırmalarının en kritik önceliklerinden biri.</p>
+<h2 id="gercek-dunyada-aldatici-hizalanmanin-izleri">Gerçek Dünyada Aldatıcı Hizalanmanın İzleri</h2>
+<p>Tam gelişmiş aldatıcı hizalanma henüz gözlemlenmese de, bazı mevcut sistem davranışları endişe verici örnekler sunuyor:</p>
+<h3 id="dalkavukluk-sycophancy">Dalkavukluk (Sycophancy)</h3>
+<p>Mevcut büyük dil modelleri, kullanıcıları memnun etmek için gerçeği çarpıtma eğilimi gösterebiliyor. Bu, “doğru cevabı ver” yerine “denetçiyi memnun et” mesa-hedefinin basit bir örneği. Aldatıcı olmasa da (model kasıtlı olarak gizlemiyor) mesa-optimizasyonun gerçek sistemlerde ortaya çıktığını gösteriyor.</p>
+<h3 id="arac-kullaniminda-beklenmedik-davranislar">Araç Kullanımında Beklenmedik Davranışlar</h3>
+<p>GPT-4’ün CAPTCHA çözme örneği, modellerin beklenmedik araçsal stratejiler geliştirebileceğini göstermişti. Model CAPTCHA’yı çözmek için bir insanı manipüle etmişti. Bu direkt bir şekilde aldatıcı hizalanma örneği değildi ancak araçsal muhakeme kapasitesini göstermişti.</p>
+<h2 id="onleme-stratejileri">Önleme Stratejileri</h2>
+<p>Aldatıcı hizalanmayı önlemek için önerilen yaklaşımlar:</p>
+<h3 id="1-erken-tespit-ve-mudahale">1. Erken Tespit ve Müdahale</h3>
+<p>Mesa-optimizasyon eğitimin erken aşamalarında tespit edilip durdurulabilirse, aldatıcı hizalanma hiç ortaya çıkmayabilir.</p>
+<h3 id="2-yorumlanabilirlik-odakli-egitim">2. Yorumlanabilirlik Odaklı Eğitim</h3>
+<p>Modelleri yalnızca performansa göre değil, aynı zamanda yorumlanabilirliklerine göre optimize etmek. Şeffaf, anlaşılabilir mekanizmalar geliştirmeye teşvik edecek eğitim hedefleri tasarlamak.</p>
+<h3 id="3-yetenegi-sinirlama">3. Yeteneği Sınırlama</h3>
+<p>Sistemlerin stratejik muhakeme ve durumsal farkındalık kapasitelerini kasıtlı olarak sınırlamak. Ancak bu, sistemlerin faydasını da önemli ölçüde azaltabilir.</p>
+<h3 id="4-coklu-bagimsiz-degerlendirme">4. Çoklu Bağımsız Değerlendirme</h3>
+<p>Farklı paradigmaları kullanan bağımsız değerlendirme sistemleri. Bir sistem hepsini tutarlı bir şekilde aldatabilse de, bu çok daha zor olur.</p>
+<h2 id="yapay-zeka-guvenligi-acisindan-onemi">Yapay Zekâ Güvenliği Açısından Önemi</h2>
+<p>Aldatıcı hizalanma, kontrol problemi için neden “kervan yolda düzülür” mantığının işlemeyeceğini gösteren belki de en önemli örnektir:</p>
+<ol>
+<li><strong>Mesa-optimizasyon</strong> potansiyel olarak uyumsuz hedefler yaratır (dikeylik tezi nedeniyle)</li>
+<li>Bu hedefler <strong>araçsal yakınsama</strong> nedeniyle güç arayışına yöneltir</li>
+<li><strong>Yüksek davranışsal fâillik</strong> bu stratejileri yürütme kapasitesi sağlar</li>
+<li><strong>Aldatıcı hizalanma</strong> tüm bunları bizden gizler</li>
+</ol>
+<p>Bu dört unsurun kombinasyonu, eğitim ve test aşamalarında tespit edemeyeceğimiz, ancak yayınlandığında ciddi tehdit oluşturacak sistemler yaratabilir.</p>
+<h2 id="sonuc">Sonuç</h2>
+<p>Aldatıcı hizalanma, yapay zekâ güvenliğinin en zorlayıcı problemlerinden biridir çünkü standart güvenlik yöntemlerimizi (test, gözetim, eğitim) doğrudan hedef alır. Anthropic’in deneysel çalışması, bunun sadece teorik bir kaygı olmadığını, mevcut sistemlerde bile böyle davranışların ortaya çıkabileceğini göstermişti.</p>
+<p>Çözüm muhtemelen mekanistik yorumlanabilirlikte yatıyor: modellerin “ne yaptığına” bakmak yerine “neden yaptığına” bakabilmeliyiz. Bu yeteneği kazanmadan, giderek daha yetenekli sistemler geliştirmeye devam etmek, görmediğimiz riskleri biriktirmek anlamına gelir.</p>
+<p>Aldatıcı hizalanma, yapay zekâ güvenliği alanının “ikinci şansımızın olmayabileceği” konusunda endişeli olmasının sebeplerinden biridir.</p>
+<hr />
+<h2 id="kaynakca">Kaynakça</h2>
+<ol>
+<li>
+<p>Carlsmith, J. (2022). <em>Is Power-Seeking AI an Existential Risk?</em> (Versiyon 2). arXiv. <a href="https://doi.org/10.48550/ARXIV.2206.13353">https://doi.org/10.48550/ARXIV.2206.13353</a></p>
+</li>
+<li>
+<p>Cotra, A. (2022). <em>Without specific countermeasures, the easiest path to transformative AI likely leads to AI takeover</em>. <a href="https://www.alignmentforum.org/posts/pRkFkzwKZ2zfa3R6H/without-specific-countermeasures-the-easiest-path-to">https://www.alignmentforum.org/posts/pRkFkzwKZ2zfa3R6H/without-specific-countermeasures-the-easiest-path-to</a></p>
+</li>
+<li>
+<p>Hubinger, E., Denison, C., Mu, J., Lambert, M., Tong, M., MacDiarmid, M., Lanham, T., Ziegler, D. M., Maxwell, T., Cheng, N., Jermyn, A., Askell, A., Radhakrishnan, A., Anil, C., Duvenaud, D., Ganguli, D., Barez, F., Clark, J., Ndousse, K., … Perez, E. (2024). <em>Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training</em> (No. arXiv:2401.05566). arXiv. <a href="https://doi.org/10.48550/arXiv.2401.05566">https://doi.org/10.48550/arXiv.2401.05566</a></p>
+</li>
+<li>
+<p>Hubinger, E., van Merwijk, C., Mikulik, V., Skalse, J., &amp; Garrabrant, S. (2019). <em>Risks from Learned Optimization in Advanced Machine Learning Systems</em> (Versiyon 3). arXiv. <a href="https://doi.org/10.48550/ARXIV.1906.01820">https://doi.org/10.48550/ARXIV.1906.01820</a></p>
+</li>
+</ol>
+<h2 id="bu-maddelere-de-bakiniz">Bu maddelere de bakınız:</h2>
+<ul>
+<li>Mesa-Optimizasyon</li>
+<li>Araçsal Yakınsama</li>
+<li>Davranışsal ve Araçsal Fâillik</li>
+<li>Yorumlanabilirlik</li>
+<li>Hedef Yanlış Genelleştirmesi</li>
+<li>Ölçeklenebilir Gözetim</li>
+<li>Dikeylik Tezi</li>
+</ul>
+
+
+        </main>
+    </div>
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            category.classList.toggle('collapsed');
+            const categoryName = category.dataset.category;
+            const collapsed = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+            collapsed[categoryName] = category.classList.contains('collapsed');
+            localStorage.setItem('collapsed-categories', JSON.stringify(collapsed));
+        }
+
+        (function() {
+            // Active page highlight
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-category-items a, .nav-home').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || currentPath.endsWith(href.replace(/\/$/, '') + '/')) {
+                    link.classList.add('active');
+                    link.closest('.nav-category')?.classList.remove('collapsed');
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>

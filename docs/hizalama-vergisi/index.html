@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="tr">
+<script>
+    (function() {
+        var saved = localStorage.getItem('theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+        window.__collapsedCategories = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+    })();
+</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hizalama Vergisi | YZ Güvenliği Ansiklopedisi</title>
+    <meta name="description" content="Yapay zekâ güvenliği kavramlarının Türkçe ansiklopedisi">
+    <link rel="stylesheet" href="https://sayhany.github.io/aistr-ansiklopedi/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        :root {
+            --accent-color: #D97757;
+            --accent-hover: #c4684a;
+        }
+        [data-theme="dark"] {
+            --bg-color: #262624;
+            --sidebar-bg: #1e1e1c;
+            --text-color: #f5f4ef;
+            --text-muted: #a8a7a3;
+            --link-color: #e8a68c;
+            --code-bg: #1a1a18;
+            --border-color: #3a3a38;
+            --hover-bg: rgba(255,255,255,0.06);
+        }
+        [data-theme="light"] {
+            --bg-color: #faf9f6;
+            --sidebar-bg: #f0efec;
+            --text-color: #262624;
+            --text-muted: #6b6a66;
+            --link-color: #b85a3d;
+            --code-bg: #e8e7e4;
+            --border-color: #d4d3d0;
+            --hover-bg: rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            padding: 1.25rem 0.75rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .sidebar h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            letter-spacing: -0.02em;
+        }
+        .theme-toggle {
+            background: var(--code-bg);
+            border: none;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+        .theme-toggle .knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle .knob svg {
+            width: 12px;
+            height: 12px;
+            fill: #fff;
+        }
+        .theme-toggle .icon-sun { display: none; }
+        .theme-toggle .icon-moon { display: block; }
+        [data-theme="light"] .theme-toggle .knob {
+            transform: translateX(20px);
+        }
+        [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+        [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+        /* Navigation */
+        .sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
+        .nav-home {
+            display: block;
+            padding: 0.5rem 0.75rem 0.5rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease;
+            margin-bottom: 0.5rem;
+        }
+        .nav-home:hover { background: var(--hover-bg); }
+
+        /* Category sections */
+        .nav-category {
+            margin-bottom: 0.25rem;
+        }
+        .nav-category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+        .nav-category-header:hover {
+            background: var(--hover-bg);
+            color: var(--text-color);
+        }
+        .nav-category-header svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .nav-category.collapsed .nav-category-header svg {
+            transform: rotate(-90deg);
+        }
+        .nav-category-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.0625rem;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            opacity: 1;
+        }
+        .nav-category.collapsed .nav-category-items {
+            max-height: 0;
+            opacity: 0;
+        }
+        .nav-category-items a {
+            display: block;
+            padding: 0.4rem 0.75rem 0.4rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: background 0.15s ease;
+        }
+        .nav-category-items a:hover {
+            background: var(--hover-bg);
+        }
+        .nav-category-items a.active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Main content */
+        .main { margin-left: 280px; flex: 1; padding: 3rem; max-width: 900px; }
+        .main h1 { color: var(--accent-color); margin-bottom: 1.5rem; font-size: 2.2rem; font-weight: 600; letter-spacing: -0.02em; }
+        .main h2 { color: var(--accent-color); margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; font-weight: 600; }
+        .main h3 { margin: 1.5rem 0 0.8rem; color: var(--text-color); font-weight: 600; }
+        .main h4, .main h5, .main h6 { margin: 1.25rem 0 0.6rem; color: var(--text-color); font-weight: 600; }
+        .main p { margin-bottom: 1rem; }
+        .main a { color: var(--link-color); }
+        .main a:hover { color: var(--accent-color); }
+        .main ul, .main ol { margin: 1rem 0 1rem 2rem; }
+        .main li { margin-bottom: 0.5rem; }
+        .main code { background: var(--code-bg); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.875em; }
+        .main pre { background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+        .main pre code { padding: 0; }
+        .main blockquote { border-left: 3px solid var(--accent-color); padding-left: 1rem; margin: 1rem 0; color: var(--text-muted); }
+        .main hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>YZ Güvenliği Ansiklopedisi</h1>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <span class="knob">
+                        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                </button>
+            </div>
+            <nav>
+                <a href="https://sayhany.github.io/aistr-ansiklopedi" class="nav-home">Ana Sayfa</a>
+
+                
+                
+
+                <!-- Temel Kavramlar -->
+                <div class="nav-category" data-category="temel"><script>if(window.__collapsedCategories.temel)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Temel Kavramlar</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;zeka&#x2F;">Zekâ</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;faillik&#x2F;">Fâillik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;davranissal-ve-aracsal-faillik&#x2F;">Davranışsal ve Araçsal Fâillik</a>
+                    </div>
+                </div>
+
+                <!-- Teorik Temeller -->
+                <div class="nav-category" data-category="teorik"><script>if(window.__collapsedCategories.teorik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Teorik Temeller</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;dikeylik-tezi&#x2F;">Dikeylik Tezi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aracsal-yakinsama&#x2F;">Araçsal Yakınsama</a>
+                    </div>
+                </div>
+
+                <!-- Hizalama Problemleri -->
+                <div class="nav-category" data-category="hizalama"><script>if(window.__collapsedCategories.hizalama)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Hizalama Problemleri</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;odul-korsanligi&#x2F;">Ödül Korsanlığı</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;sartname-suistimali&#x2F;">Şartnâme Suistimali</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hedef-yanlis-genellestirmesi&#x2F;">Hedef Yanlış Genelleştirmesi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;mesa-optimizasyon&#x2F;">Mesa-Optimizasyon</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aldatici-hizalanma&#x2F;">Aldatıcı Hizalanma</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hizalama-vergisi&#x2F;">Hizalama Vergisi</a>
+                    </div>
+                </div>
+
+                <!-- Güvenlik Yaklaşımları -->
+                <div class="nav-category" data-category="guvenlik"><script>if(window.__collapsedCategories.guvenlik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Güvenlik Yaklaşımları</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;olceklenebilir-gozetim&#x2F;">Ölçeklenebilir Gözetim</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;duzeltilebilirlik&#x2F;">Düzeltilebilirlik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;yorumlanabilirlik&#x2F;">Yorumlanabilirlik</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        <main class="main">
+            
+<h1>Hizalama Vergisi</h1>
+<h2 id="giris">Giriş</h2>
+<p><strong>Hizalanma vergisi</strong> (“Alignment Tax”), ölçeklenebilir denetim ve diğer hizalanma tekniklerinin uygulanmasının, bu tür güvenceler (“safeguards”) olmaksızın eğitilen yapay zekâ sistemlerine kıyasla artırdığı maliyetleri ifade eder. Bu terim, en önde gelen yapay zekâ güvenliği araştırmacılarından Paul Christiano tarafından icat edilmiştir.</p>
+<h2 id="yapay-zeka-hizalanmasinin-maliyeti">Yapay Zekâ Hizalanmasının Maliyeti</h2>
+<p>Bu maliyetler çeşitli şekillerde tezahür edebilir: münazara veya özyinelemeli değerlendirme için gereken ek hesaplama kaynakları, modelin ihtiyatlı davranışlar nedeniyle düşen görev performansı, çok aşamalı değerlendirme süreçlerinden kaynaklanan artan gecikme süresi veya ilave güvenlik kontrolleri sebebiyle yavaşlayan geliştirme döngüleri.</p>
+<p>Paul Christiano, bu kavramı iki aktör örneği üzerinden açıklıyor: yapay zekâsının tam olarak kendi istediğini yapmaya çalışması hususunda ısrar eden Alice ve yalnızca kâr gibi araçsal hedefleri maksimize eden bir yapay zekâyı devreye sokmaya razı olan Bob. Hizalanma vergisi, Alice’in hizalanma konusunda ısrarcı olmasıyla karşı karşıya kaldığı ek maliyeti ifade etmektedir. En iyi potansiyel senaryo, hizalanmamış bir yapay zekâyı devreye sokmak için hiçbir nedenin bulunmadığı “vergisiz” durum olacaktır. En kötü durum ise, tüm faydalı kabiliyetleri ortadan kaldırdığı için hizalanmanın işlevsel olarak imkânsız olduğu “maksimum vergi” durumudur.</p>
+<p>Hizalama vergisinin varlığı, yapay zekâ güvenliği için öneml pratik ve stratejik zorluklara neden olmaktadır. Eğer hizalanmış sistemler, hizalanmamış alternatiflerine göre kayda değer ölçüde daha az yetenekli veya daha maliyetli olursa, rekabetçi baskılar ve yarış dinamikleri kuruluşları daha az güvenli sistemleri piyasaya sürmeye teşvik edebilir. Bu durum, birden fazla aktörün gelişmiş yapay zekâ kabiliyetleri geliştirmek için yarıştığı senaryolarda özellikle endişe vericidir. Hizalanma vergisi, denetim tekniklerinin verimli hale getirilmesi için optimizasyon ve mühendislik çabaları henüz sarf edilmeden önceki erken uygulamalarda nispeten daha yüksek olabilir.</p>
+<h2 id="hizalama-vergisinin-turleri">Hizalama Vergisinin Türleri</h2>
+<p>Yapay zekâ güvenliği araştırmacısı Jan Leike, her biri farklı çözüm stratejileri gerektiren üç ayrı hizalama vergisi türünü ayırt ederek bu kavramı detaylandırmıştır:</p>
+<ol>
+<li>Performans Vergileri</li>
+<li>Geliştirme Vergileri</li>
+<li>Piyasaya Sunma Hızı Vergileri</li>
+</ol>
+<h3 id="performans-vergileri">Performans vergileri</h3>
+<p>Performans vergileri, hizalanmış modellerin hizalanmamış temel modellere kıyasla belirli görevlerdeki becerilerinin zayıflaması olarak ortaya çıkar. Bunlar, normalde referans değerlendirme puanlarındaki düşüşler aracılığıyla ölçülse de, Leike daha doğal bir metrik önermektedir: performans kaybını telafi etmek için gereken ek hesaplama maliyetinin hesaplanması. Örneğin, temel model performansına erişmek için daima en iyi 2’li örnekleme (best-of-2-sampling) gerekiyorsa, bu durum %100’lük bir hizalama vergisine tekabül eder. Eğer görevlerin %10’u için en iyi 4’lü örnekleme (best-of-4 sampling) gerekiyorsa, bu da %40’lık bir çıkarım zamanı vergisine karşılık gelir.</p>
+<h3 id="gelistirme-vergileri">Geliştirme Vergileri</h3>
+<p>Geliştirme vergileri, RLHF (insan geri bildirimli pekiştirmeli öğrenme) kod tabanlarının oluşturulmasını, insan etiketleyicilerin işe alınmasını ve idaresini, hizalama eğitimi için gereken işlem maliyetlerini ve araştırmacıların bu amaca yönelik sarf ettiği çabayı kapsar. GPT-3/InstructGPT özelinde Leike, toplam hizalama geliştirme maliyetlerinin, GPT-3’ün geliştirme maliyetinin yaklaşık %5 ila %20’si oranında olduğunu tahmin etmektedir. Bu maliyetler, genelde model geliştirme esnasında ortaya çıkan tek seferlik veya yinelenen masraflardır.</p>
+<h3 id="piyasaya-sunma-hizi-vergileri">Piyasaya Sunma Hızı Vergileri</h3>
+<p>Piyasaya sunma hızı maliyetleri, önceden eğitilmiş bir temel modeli hizalamak için gereken zamanı ifade eder. İlk InstructGPT hizalama süreci yaklaşık 9 ay sürmüş olsa da, altyapı iyileştirmeleri ve veri yeniden kullanımı sayesinde müteakip iterasyonlar 3 aya kadar kısaltılabilmiştir. Rekabetçi senaryolarda, dağıtımdaki gecikmeler, daha az hizalanmış alternatiflerin piyasaya sürülmesi yönünde pazar baskıları yaratabilir.</p>
+<h2 id="cozum-cabalari">Çözüm Çabaları</h2>
+<p>Yapay zekâ güvenliği araştırmacıları, muhtelif yaklaşımlarla hizalanma vergisini azaltmayı hedeflemektedir: daha verimli denetim stratejileri ve algoritmaları geliştirmek, aynı zamanda kabiliyetleri de artıran denetim mekanizmalarından yararlanmanın yollarını bulmak ve bazı hizalanma tekniklerinin belirli alanlarda performansı düşürmek yerine bilakis fiilen artırabileceğini göstermek. Farklı denetim yöntemleri için hizalanma vergisinin gerçek büyüklüğünü anlamak ve hangi maliyetlerin temel, hangilerinin ise yalnızca mevcut uygulamaların birer sonucu olduğunu tespit etmek, önemli bir araştırma önceliği olarak kalmaya devam etmektedir. Amaç, hizalanmış yapay zekâ sistemlerini, güvenlik odaklı geliştirmenin rekabetçi bir dezavantaj olmaktan çıkıp ekonomik olarak uygulanabilir hale geleceği kadar rekabetçi kılmaktır.</p>
+<h2 id="kaynaklar">Kaynaklar</h2>
+<p>Askell, A., Bai, Y., Chen, A., Drain, D., Ganguli, D., Henighan, T., Jones, A., Joseph, N., Mann, B., DasSarma, N., Elhage, N., Hatfield-Dodds, Z., Hernandez, D., Kernion, J., Ndousse, K., Olsson, C., Amodei, D., Brown, T., Clark, J., … Kaplan, J. (2021). <em>A General Language Assistant as a Laboratory for Alignment</em> (No. arXiv:2112.00861). arXiv. <a href="https://doi.org/10.48550/arXiv.2112.00861">https://doi.org/10.48550/arXiv.2112.00861</a></p>
+<p>Christiano, P. (t.y.). <em>Paul Christiano: Current Work in AI Alignment | Effective Altruism</em>. Effective Altruism Forum. Geliş tarihi 11 Kasım 2025, gönderen <a href="https://www.effectivealtruism.org/articles/paul-christiano-current-work-in-ai-alignment">https://www.effectivealtruism.org/articles/paul-christiano-current-work-in-ai-alignment</a></p>
+<p>Leike, J. (2022, Aralık 19). Distinguishing three alignment taxes [Substack newsletter]. <em>Musings on the Alignment Problem</em>. <a href="https://aligned.substack.com/p/three-alignment-taxes">https://aligned.substack.com/p/three-alignment-taxes</a></p>
+
+
+        </main>
+    </div>
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            category.classList.toggle('collapsed');
+            const categoryName = category.dataset.category;
+            const collapsed = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+            collapsed[categoryName] = category.classList.contains('collapsed');
+            localStorage.setItem('collapsed-categories', JSON.stringify(collapsed));
+        }
+
+        (function() {
+            // Active page highlight
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-category-items a, .nav-home').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || currentPath.endsWith(href.replace(/\/$/, '') + '/')) {
+                    link.classList.add('active');
+                    link.closest('.nav-category')?.classList.remove('collapsed');
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="tr">
+    <title>YZ Güvenliği Ansiklopedisi</title>
+    <subtitle>Yapay zekâ güvenliği kavramlarının Türkçe ansiklopedisi</subtitle>
+    <link rel="self" type="application/atom+xml" href="https://sayhany.github.io/aistr-ansiklopedi/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://sayhany.github.io/aistr-ansiklopedi"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    
+    <id>https://sayhany.github.io/aistr-ansiklopedi/atom.xml</id>
+</feed>

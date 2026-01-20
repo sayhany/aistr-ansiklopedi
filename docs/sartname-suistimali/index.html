@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="tr">
+<script>
+    (function() {
+        var saved = localStorage.getItem('theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+        window.__collapsedCategories = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+    })();
+</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Şartnâme Suistimali | YZ Güvenliği Ansiklopedisi</title>
+    <meta name="description" content="Yapay zekâ güvenliği kavramlarının Türkçe ansiklopedisi">
+    <link rel="stylesheet" href="https://sayhany.github.io/aistr-ansiklopedi/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        :root {
+            --accent-color: #D97757;
+            --accent-hover: #c4684a;
+        }
+        [data-theme="dark"] {
+            --bg-color: #262624;
+            --sidebar-bg: #1e1e1c;
+            --text-color: #f5f4ef;
+            --text-muted: #a8a7a3;
+            --link-color: #e8a68c;
+            --code-bg: #1a1a18;
+            --border-color: #3a3a38;
+            --hover-bg: rgba(255,255,255,0.06);
+        }
+        [data-theme="light"] {
+            --bg-color: #faf9f6;
+            --sidebar-bg: #f0efec;
+            --text-color: #262624;
+            --text-muted: #6b6a66;
+            --link-color: #b85a3d;
+            --code-bg: #e8e7e4;
+            --border-color: #d4d3d0;
+            --hover-bg: rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            padding: 1.25rem 0.75rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .sidebar h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            letter-spacing: -0.02em;
+        }
+        .theme-toggle {
+            background: var(--code-bg);
+            border: none;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+        .theme-toggle .knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle .knob svg {
+            width: 12px;
+            height: 12px;
+            fill: #fff;
+        }
+        .theme-toggle .icon-sun { display: none; }
+        .theme-toggle .icon-moon { display: block; }
+        [data-theme="light"] .theme-toggle .knob {
+            transform: translateX(20px);
+        }
+        [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+        [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+        /* Navigation */
+        .sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
+        .nav-home {
+            display: block;
+            padding: 0.5rem 0.75rem 0.5rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease;
+            margin-bottom: 0.5rem;
+        }
+        .nav-home:hover { background: var(--hover-bg); }
+
+        /* Category sections */
+        .nav-category {
+            margin-bottom: 0.25rem;
+        }
+        .nav-category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+        .nav-category-header:hover {
+            background: var(--hover-bg);
+            color: var(--text-color);
+        }
+        .nav-category-header svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .nav-category.collapsed .nav-category-header svg {
+            transform: rotate(-90deg);
+        }
+        .nav-category-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.0625rem;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            opacity: 1;
+        }
+        .nav-category.collapsed .nav-category-items {
+            max-height: 0;
+            opacity: 0;
+        }
+        .nav-category-items a {
+            display: block;
+            padding: 0.4rem 0.75rem 0.4rem 1.75rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: background 0.15s ease;
+        }
+        .nav-category-items a:hover {
+            background: var(--hover-bg);
+        }
+        .nav-category-items a.active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Main content */
+        .main { margin-left: 280px; flex: 1; padding: 3rem; max-width: 900px; }
+        .main h1 { color: var(--accent-color); margin-bottom: 1.5rem; font-size: 2.2rem; font-weight: 600; letter-spacing: -0.02em; }
+        .main h2 { color: var(--accent-color); margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; font-weight: 600; }
+        .main h3 { margin: 1.5rem 0 0.8rem; color: var(--text-color); font-weight: 600; }
+        .main h4, .main h5, .main h6 { margin: 1.25rem 0 0.6rem; color: var(--text-color); font-weight: 600; }
+        .main p { margin-bottom: 1rem; }
+        .main a { color: var(--link-color); }
+        .main a:hover { color: var(--accent-color); }
+        .main ul, .main ol { margin: 1rem 0 1rem 2rem; }
+        .main li { margin-bottom: 0.5rem; }
+        .main code { background: var(--code-bg); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.875em; }
+        .main pre { background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+        .main pre code { padding: 0; }
+        .main blockquote { border-left: 3px solid var(--accent-color); padding-left: 1rem; margin: 1rem 0; color: var(--text-muted); }
+        .main hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>YZ Güvenliği Ansiklopedisi</h1>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <span class="knob">
+                        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                </button>
+            </div>
+            <nav>
+                <a href="https://sayhany.github.io/aistr-ansiklopedi" class="nav-home">Ana Sayfa</a>
+
+                
+                
+
+                <!-- Temel Kavramlar -->
+                <div class="nav-category" data-category="temel"><script>if(window.__collapsedCategories.temel)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Temel Kavramlar</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;zeka&#x2F;">Zekâ</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;faillik&#x2F;">Fâillik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;davranissal-ve-aracsal-faillik&#x2F;">Davranışsal ve Araçsal Fâillik</a>
+                    </div>
+                </div>
+
+                <!-- Teorik Temeller -->
+                <div class="nav-category" data-category="teorik"><script>if(window.__collapsedCategories.teorik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Teorik Temeller</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;dikeylik-tezi&#x2F;">Dikeylik Tezi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aracsal-yakinsama&#x2F;">Araçsal Yakınsama</a>
+                    </div>
+                </div>
+
+                <!-- Hizalama Problemleri -->
+                <div class="nav-category" data-category="hizalama"><script>if(window.__collapsedCategories.hizalama)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Hizalama Problemleri</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;odul-korsanligi&#x2F;">Ödül Korsanlığı</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;sartname-suistimali&#x2F;">Şartnâme Suistimali</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hedef-yanlis-genellestirmesi&#x2F;">Hedef Yanlış Genelleştirmesi</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;mesa-optimizasyon&#x2F;">Mesa-Optimizasyon</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;aldatici-hizalanma&#x2F;">Aldatıcı Hizalanma</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;hizalama-vergisi&#x2F;">Hizalama Vergisi</a>
+                    </div>
+                </div>
+
+                <!-- Güvenlik Yaklaşımları -->
+                <div class="nav-category" data-category="guvenlik"><script>if(window.__collapsedCategories.guvenlik)document.currentScript.parentElement.classList.add('collapsed')</script>
+                    <div class="nav-category-header" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                        <span>Güvenlik Yaklaşımları</span>
+                    </div>
+                    <div class="nav-category-items">
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;olceklenebilir-gozetim&#x2F;">Ölçeklenebilir Gözetim</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;duzeltilebilirlik&#x2F;">Düzeltilebilirlik</a>
+                        <a href="https:&#x2F;&#x2F;sayhany.github.io&#x2F;aistr-ansiklopedi&#x2F;docs&#x2F;yorumlanabilirlik&#x2F;">Yorumlanabilirlik</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        <main class="main">
+            
+<h1>Şartnâme Suistimali</h1>
+<h2 id="takdim">Takdim</h2>
+<p>Şartnâme suistimali (specification gaming), bir yapay zekâ sisteminin, belirtilen şartname ile tasarımcının asıl amacı arasındaki uyumsuzlukları, gedikleri veya muğlaklıklardan istifade ederek (bir ödül fonksiyonu, skor, kayıp veya değerlendirici gibi) belirli bir hedef fonksiyonunu azâmî seviyeye çıkardığı bir başarısızlık senaryosudur.</p>
+<p>Şartnâme suistimali, aslen iktisat alanında ortaya atılmış bir kavram olan <strong>Goodhart Yasası</strong> ile yakından alâkalıdır: “Bir ölçüt hedef haline geldiğinde, iyi bir ölçüt olmaktan çıkar”. Yapay zekâ sistemlerinde bu durum, temel bir zorluk olarak tezahür eder: herhangi bir formel hedef fonksiyonu, kaçınılmaz olarak bizim esasen arzu ettiğimiz şeyin bir vekilidir ve yeterli kabiliyete sahip optimizatörler, bu vekili gerçek niyetlerimizden sapan yollarla maksimize etmenin yöntemlerini bulacaktır. Özellikle pekiştirmeli öğrenme (RL ya da “Reinforcement Learning”) bağlamlarında, ödül istismarı (reward hacking) terimi, sıklıkla şarnâme suistimali (specification gaming) ile aynı anlamda kullanılır.</p>
+<h2 id="giris">Giriş</h2>
+<p>Şartnâme suistimalini daha iyi kavramak için eğitim sisteminde yaşabilecek bir sorunla paralellik kurulabilir. Daha nitelikli bir eğitim arzusundaki bir bakanın, liseler ve öğretmenler için temel bir performans göstergesi olarak ortalama sınav puanlarını belirlediğini hayal edelim. Bu durum, liseler ve hocaların öğrencilere bol keseden puan dağıtmaya yönelik bir itki yaratacaktır. Bunun sonucunda bakan, mükemmel ortalama sınav puanlarına karşın daha da kötüleşmiş bir eğitim sistemiyle karşılaşacaktır. Ölçüt, bizatihi hedefe dönüşmüş ve artık arzu edilen asıl amacı ölçmekten uzaklaşmıştır.</p>
+<p>Şimdi okulların yerine bir yapay zekâ sistemi koyduğumuzu düşünelim. Şayet “bu skoru en üst düzeye çıkar” dersek, yapay zekâ, hedeflenen sonuca ulaşmaksızın skoru yükselten, mesela ortamdaki, ölçüm sürecindeki veya değerlendiricinin bizatihi kendisindeki açıklardan istifade ederek, beklenmedik kestirme yollar keşfedebilir. Sistemler daha yetkin hâle geldikçe bu risk de giderek daha ciddi hale gelmektedir.</p>
+<p>Beceri seviyesi düşük bir optimizatör, sırf onları keşfetme kabiliyetinden yoksun olduğu için sistemdeki açıklıkları bulmakta başarısız olabilir. Güçlü bir optimize edici ise formel amaç ile güdülen hedef arasındaki her türlü sapmayı sistematik olarak bulacak ve istismar edecektir. Bu durum endişe verici bir dinamiğe yol açmaktadır: yapay zekâ sistemlerinden arzu ettiğimiz kabiliyetin ta kendisi, onların beklentilerin aksine şartnameyi suistimal etme olasılığını artırmaktadır.</p>
+<h2 id="formel-analiz">Formel Analiz</h2>
+<p>Formel analiz, şartnâme suistimalinin neden kolayca düzeltilebilecek basit bir bir hata olmadığını, eksik (sub-optimal) şartname altında optimizasyonun doğal bir neticesi olduğunu ortaya koymaktadır. Titiz bir yaklaşımla, “suistimal edilemez” bir vekil (proxy) metriği ancak vekil metrik üzerinde daha iyi bir skor elde etmenin, gerçekte önemsediğimiz sonuç (aslî metrik) üzerinde artışa yol açması durumunda “suistimal edilemez” olarak tanımlayabiliriz. Bu basit ve bu basitliğin neticesinde zarif bir tanım olmakla beraber, bu tür garantilerin son derece nadir olduğunu görülmektedir. <strong>Sürekli politika uzayları</strong> (continous policy spaces) için, iki ödül fonksiyonu ancak biri esasen sabit bir fonksiyon ise (bu tanım dahilinde) suistimal edilemez olabilir ki bu da suistimal edilemezlik kriterinin içi boş (trivial) bir şekilde karşılandığı bir örnektir. Boş olmayan suistimal edilemez ödül fonksiyonu çiftleri, yalnızca olası davranışlar uzayının sonlu veya başka bir şekilde kısıtlı olduğu durumlarda var olabilir.</p>
+<p>Daha pratik bir çerçeve, ödül suistimalini, vekil ödül ile gerçek ödül arasındaki korelasyonun özellikle güçlü optimizasyon altında ulaşılan davranış bölgelerinde bozulması olarak ele alır. Vekil metrik, “normal” davranışlar genelinde amaçladığımız şeyle güçlü bir korelasyon gösterebilir fakat optimizasyon, sistemleri tam olarak bu korelasyonun başarısız olduğu bölgelere iter. Bu durum, regülarizasyon tekniklerinin (optimize edilmiş bir politikanın bilinen güvenli bir referans hattından [baseline] ne kadar sapabileceğini kısıtlamanın) uygulamada suistimali neden azaltabildiğini açıklar. Buradaki amacımız, mükemmel bir vekil bulmak (ki konuştuğumuz gibi bu muhtemelen imkansızdır) değil, optimizasyonun vekilin geçerliliğini yitirdiği rejimlere ne kadar ilerlediğini kontrol altında tutmaktır.</p>
+<h2 id="sartname-suistimalinin-potansiyel-mekanizmalari">Şartnâme Suistimalinin Potansiyel Mekanizmaları</h2>
+<h3 id="vekil-odul-fonksiyonunun-eksik-yanlis-belirlenmesi">Vekil ödül fonksiyonunun eksik/yanlış belirlenmesi</h3>
+<p>Vekil hedefin eksik belirlenmesi, şartnâme suistimalinin en bariz örneğini teşkil eder: ödül fonksiyonu, ilgili terimleri ya ihmal eder ya da yanlış ağırlıklandırır. “Zeminin temizliği” ödül fonksiyonunu kullanan ancak nesneleri kırmaktan dolayı cezalandırılmayan bir robot süpürge, çöpleri mobilya altına süpürmeyi veya kiri algılayan sensörleri kapatmayı öğrenebilir; böylece, gerçekte temizlik yapmaksızın ölçümü tatmin etmiş olur.</p>
+<h3 id="ortam-ve-degerlendirici-suistimali">Ortam ve değerlendirici suistimali</h3>
+<p>Ortam ve değerlendirici suistimali, fâillerin ödül fonksiyonunun dahilindeki içkin boşluklardan ziyade, simülasyon, oyun veya değerlendirme düzenindeki açıklardan istifâde etmesi vasıtasıyla ortaya çıkar. Simüle edilmiş ortamlarda fâiller sık sık fizik motoru hatalarından, puanlama aksaklıklarından veya istisnai durumlardan yararlanır. Hızlı hareket etmesi için eğitilmiş bir robot, kendini uzatıp devrilmenin bu ödül fonksiyonunu tatmin ettiğini fark edip bunu suistimal edebilir.</p>
+<h2 id="ornekler">Örnekler</h2>
+<p>Şartnâme suistimali için en sık verilen örneklerden biri, OpenAI’nin CoastRunners deneyinden geliyor. OpenAI’ın yaptığı araştırmada bir tekne yarışı oyununu oynamak üzere eğitilmiş bir fâilin (yapay zekâ modeli) ödülü, rota üzerindeki hedefleri vurmaya bağlı olan oyun puanına endekslenmişti. Fâil, yarışı bitirmek yerine, bir lagünde daireler çizerek, teknesi alev alıp diğer teknelere çarparken tekrar ortaya çıkan bonus hedeflerini defalarca toplayarak daha yüksek puanlar elde edebileceğini keşfetti. Ajan, amaçlanan hedefi tamamen göz ardı ederken, belirtilen hedefi mükemmel bir şekilde optimize etmiştir. Şartname suistimali katalogları, düzinelerce benzer vakayı belgeliyor. Mesela hızlı hareket etme görevi verilen simüle edilmiş bir robot, kendini uzun hale getirip devrilmeyi öğrendi. Bir blok istifleme görevindeki bir ajan, kolunu kamera ile bloklar arasına konumlandırarak sadece onları kavrıyormuş gibi görünmeyi öğrendi. Futbol oynayan bir ajan, gerçek futbol becerilerini öğrenmek yerine topun yakınında yüksek frekansta titreşerek gol atabileceğini keşfetti. Bu örnekler oyunlarda ve simülasyonlarda eğlenceli görünse de, yapay zekâ sistemleri gerçek dünya sonuçlarını kontrol ettiğinde ciddi sonuçları olan bir ilkeyi ortaya koyuyor.</p>
+<h2 id="sartname-suistimali-ve-hedef-yanlis-genellemesi-arasindaki-ayrim">Şartname Suistimali ve Hedef Yanlış Genellemesi Arasındaki Ayrım</h2>
+<p>Önemli bir ayrım: her istenmeyen yapay zeka davranışı şartname suistimali değildir. Örneğin <strong>hedef yanlış genellemesi</strong>, doğru bir şartnâmeyle bile bir modelin yeni durumlarda hatalı bir şekilde genelleşen bir iç hedef öğrendiği farklı bir başarısızlık modudur (failure mode). CoinRun deneyleri bu farkı ortaya koymakta. Madeni paralara ulaşmak için eğitilen bir fâil, eğitim esnasında madeni paraların daima sağ tarafta olduğunu öğrenmişti. Madeni paraların başka yerlerde olduğu seviyelerde test edildiğinde, fâil ne olursa olsun sağa gitmişti: “parayı al” yerine “sağa git” hedefini öğrenmişti. Bu bir şartnâme hatası değildi; madeni para ödülü doğruydu. Mesele, öğrenilen hedefin eğitimde gerçek hedefle tesadüfen korelasyon göstermesi ancak uygulamada ondan sapmasıydı. Her iki başarısızlık modu da uyumsuzluğa yol açıyor, ancak farklı müdahaleler gerektiriyorlar. Şartnâme suistimali, daha iyi hedef belirtimi ve sağlam bir değerlendirme gerektirirken, hedef yanlış genellemesi, sağlam bir genelleme üreten eğitim prosedürleri ve modellerin gerçekte hangi hedefleri öğrendiğini doğrulamaya yönelik teknikler gerektiriyor. Bunlardan birine aşırı odaklanmak, sistemleri diğerine karşı savunmasız bırakabilir.</p>
+<h2 id="risk-azaltma-yaklasimlari">Risk Azaltma Yaklaşımları</h2>
+<h3 id="ters-pekistirmeli-ogrenme-inverse-reinforcement-learning-irl">Ters pekiştirmeli öğrenme (Inverse Reinforcement Learning/IRL)</h3>
+<p>Hedeflerin açıkça belirtilmesini gerektirmek yerine, gözlemlenen davranışlardan tercihleri çıkarmaya çalışır. Öğrenilen tercihler, niyetleri elle hazırlanmış ödüllerden daha iyi yakalayabilse de, öğrenilmiş ödül modellerinin kendileri de suistimal edilebilir.</p>
+<h3 id="tartisma-ve-guclendirme">Tartışma ve güçlendirme</h3>
+<p>Önerilen eylemlerdeki kusurları tespit etmek için yapay zeka sistemlerini kullanır. Yapay zeka tartışmasında, bir insanın hakemlik yaptığı bir ortamda iki yapay zekâ sistemi zıt tarafları savunur; bu sayede suistimal stratejilerinin çatışmacı eleştiri (adversarial critique) yoluyla ortaya çıkarılması umulur.</p>
+<h3 id="referans-politikalara-gore-regularizasyon">Referans politikalara göre regülarizasyon</h3>
+<p>Optimize edilmiş bir politikanın bilinen güvenli bir taban çizgisinden ne kadar sapabileceğini sınırlar. Bu yaklaşımın, vekil metriğin referans dağılımı altında aslî metrikle korelasyon gösterdiği durumlarda gerçek ödülü iyileştirebileceğini gösteren teorik bir temeli vardır; bu da esasen sistemi, vekilin geçerliliğini koruduğu alanda tutar.</p>
+<h3 id="degerlendirici-stres-testi">Değerlendirici stres testi</h3>
+<p>Değerlendirici stres testi, puanların anlamsal içerikten mi yoksa istismar edilebilir yapısal bozukluklardan mı kaynaklandığını, gerçek iyileştirmeleri yüzeysel puan şişirmelerinden ayırmak amacıyla kontrollü pertürbasyonlar kullanarak kontrol ederek şartnâme suistimalini tespit eder.</p>
+<h3 id="kirmizi-takim-uygulamasi-red-teaming">“Kırmızı takım” uygulaması (red-teaming)</h3>
+<p>Modelin yayımlanmasından önce kasıtlı olarak şartnâme açıklarını aramayı içerir. Bununla birlikte, bu yaklaşım yalnızca değerlendiricilerin aramayı akıl ettiği sorunları bulur ve daha yetenekli sistemler daha yaratıcı suistimal metotları keşfedebilir.</p>
+<h2 id="kaynakca">Kaynakça</h2>
+<p>Amodei, D., Olah, C., Steinhardt, J., Christiano, P., Schulman, J., &amp; Mané, D. (2016). <em>Concrete Problems in AI Safety</em> (No. arXiv:1606.06565). arXiv. <a href="https://doi.org/10.48550/arXiv.1606.06565">https://doi.org/10.48550/arXiv.1606.06565</a></p>
+<p>Clark, J., &amp; Amodei, D. (2016, December 21). <em>Faulty reward functions in the wild</em>. <a href="https://openai.com/index/faulty-reward-functions/">https://openai.com/index/faulty-reward-functions/</a></p>
+<p>Everitt, T., Hutter, M., Kumar, R., &amp; Krakovna, V. (2019). <em>Reward Tampering Problems and Solutions in Reinforcement Learning: A Causal Influence Diagram Perspective</em> (Version 5). arXiv. <a href="https://doi.org/10.48550/ARXIV.1908.04734">https://doi.org/10.48550/ARXIV.1908.04734</a></p>
+<p>Karwowski, J., Hayman, O., Bai, X., Kiendlhofer, K., Griffin, C., &amp; Skalse, J. (2023). <em>Goodhart’s Law in Reinforcement Learning</em> (No. arXiv:2310.09144). arXiv. <a href="https://doi.org/10.48550/arXiv.2310.09144">https://doi.org/10.48550/arXiv.2310.09144</a></p>
+<p>Krakovna, V., Uesato, J., Mikulik, V., Rahtz, M., Everitt, T., Kumar, R., Kenton, Z., Leike, J., &amp; Legg, S. (2020, April 21). <em>Specification gaming: The flip side of AI ingenuity</em>. Google DeepMind. <a href="https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/">https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/</a></p>
+<p>Laidlaw, C., Singhal, S., &amp; Dragan, A. (2024). <em>Correlated Proxies: A New Definition and Improved Mitigation for Reward Hacking</em> (Version 4). arXiv. <a href="https://doi.org/10.48550/ARXIV.2403.03185">https://doi.org/10.48550/ARXIV.2403.03185</a></p>
+<p>Langosco, L., Koch, J., Sharkey, L., Pfau, J., Orseau, L., &amp; Krueger, D. (2021). <em>Goal Misgeneralization in Deep Reinforcement Learning</em> (Version 7). arXiv. <a href="https://doi.org/10.48550/ARXIV.2105.14111">https://doi.org/10.48550/ARXIV.2105.14111</a></p>
+<p>METR. (2025, June). <em>Recent frontier models are reward hacking</em>. <a href="https://metr.org/blog/2025-06-05-recent-reward-hacking/">https://metr.org/blog/2025-06-05-recent-reward-hacking/</a></p>
+<p>Shah, R., Varma, V., Kumar, R., Phuong, M., Krakovna, V., Uesato, J., &amp; Kenton, Z. (2022). <em>Goal Misgeneralization: Why Correct Specifications Aren’t Enough For Correct Goals</em> (No. arXiv:2210.01790). arXiv. <a href="https://doi.org/10.48550/arXiv.2210.01790">https://doi.org/10.48550/arXiv.2210.01790</a></p>
+<p>Skalse, J., Howe, N. H. R., Krasheninnikov, D., &amp; Krueger, D. (2025). <em>Defining and Characterizing Reward Hacking</em> (No. arXiv:2209.13085). arXiv. <a href="https://doi.org/10.48550/arXiv.2209.13085">https://doi.org/10.48550/arXiv.2209.13085</a></p>
+
+
+        </main>
+    </div>
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            category.classList.toggle('collapsed');
+            const categoryName = category.dataset.category;
+            const collapsed = JSON.parse(localStorage.getItem('collapsed-categories') || '{}');
+            collapsed[categoryName] = category.classList.contains('collapsed');
+            localStorage.setItem('collapsed-categories', JSON.stringify(collapsed));
+        }
+
+        (function() {
+            // Active page highlight
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-category-items a, .nav-home').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || currentPath.endsWith(href.replace(/\/$/, '') + '/')) {
+                    link.classList.add('active');
+                    link.closest('.nav-category')?.classList.remove('collapsed');
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>

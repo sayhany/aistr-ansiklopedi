@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+Allow: /
+Sitemap: https://sayhany.github.io/aistr-ansiklopedi/sitemap.xml
